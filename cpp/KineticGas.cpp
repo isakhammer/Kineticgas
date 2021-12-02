@@ -45,6 +45,7 @@ double max(double a, double b){
 
 #pragma region // Tests
 int cpp_tests(){
+    std::printf("We runnin!");
     int r{0};
     r = factorial_tests();
     if (!r) r = kingas_tests();
@@ -61,8 +62,8 @@ int kingas_tests(){
     std::vector<double> Mm{5.5, 10.1};
     std::vector<std::vector<double>> sigmaij {{1.5, 2.0}, {2.0, 2.5}};
     std::vector<double> x {0.3, 0.7};
-    KineticGas k{Mm, sigmaij, x, 300, 1e5, 5};
-    std::vector<double> tsts {k.x1 - 0.3, k.x2 - 0.7, k.m0 - 15.6, k.sigma1 - 1.5, k.sigma2 - 2.5, k.sigma12 - 2.0};
+    KineticGas k{Mm, sigmaij};
+    std::vector<double> tsts {k.m0 - 15.6, k.sigma1 - 1.5, k.sigma2 - 2.5, k.sigma12 - 2.0};
     for (double t : tsts){
         if (fabs(t) > FLTEPS){
             return 27;
@@ -85,8 +86,6 @@ int kingas_tests(){
 }
 #pragma endregion
 
-#pragma region // KineticGas
-
 #pragma region // Helper functions and initializer
 
 int delta(int i, int j){
@@ -104,51 +103,102 @@ double w(int l, int r){
     return 0.5 * f;
 }
 
-std::vector<std::vector<double>> KineticGas::get_A(){
-    return A_matrix;
-}
-std::vector<double> KineticGas::get_delta(){
-    return delta_vector;
-}
-
-KineticGas::KineticGas(std::vector<double> init_mole_weights, 
-        std::vector<std::vector<double>> init_sigmaij, 
-        std::vector<double> init_mole_fracs,
-        double init_T,
-        double init_p, // Pa
-        int init_N) 
-        : mole_weights{init_mole_weights},
-        sigmaij{init_sigmaij},
-        mole_fracs{init_mole_fracs},
-        T{init_T},
-        N{init_N},
-        m0{0.0},
-        A_matrix(2*init_N + 1, std::vector<double>(2 * init_N + 1)),
-        delta_vector(2 * init_N + 1)
-    {
-    m0 = 0.0;
-    for (int i = 0; i < sigmaij.size(); i++){
-        sigma.push_back(sigmaij[i][i]);
-        m0 += mole_weights[i];
-    }
-    n = init_p / (BOLTZMANN * init_T);
+std::vector<std::vector<double>> KineticGas::get_A_matrix(
+        double in_T,
+        std::vector<double> in_mole_fracs,
+        int N)
+{
+    T = in_T;
+    mole_fracs = in_mole_fracs;
     x1 = mole_fracs[0];
     x2 = mole_fracs[1];
-    sigma1 = sigma[0];
-    sigma2 = sigma[1];
-    sigma12 = sigmaij[0][1];
-    M1 = mole_weights[0] / m0;
-    M2 = mole_weights[1] / m0;
-    
+    std::vector<std::vector<double>> A_matrix(2*N + 1, std::vector<double>(2 * N + 1));
+
     for (int p = - N; p <= N; p++){
         for (int q = - N; q <= p; q++){
             A_matrix[p + N][q + N] = a(p, q);
             A_matrix[q + N][p + N] = A_matrix[p + N][q + N]; // Matrix is symmetric
         }
     }
-    
-    double delta_0 = (3.0 / (n * 2.0)) * sqrt(2 * BOLTZMANN * T / m0);
-    delta_vector[N] = delta_0;
+
+    return A_matrix;
+}
+
+std::vector<double> KineticGas::get_delta_vector(
+        double in_T,
+        double particle_density,
+        int N)
+{
+    std::vector<double> delta_vector(2 * N + 1);
+    delta_vector[N] = (3.0 / (particle_density * 2.0)) * sqrt(2 * BOLTZMANN * in_T / m0);
+    return delta_vector;
+}
+
+std::vector<std::vector<double>> KineticGas::get_reduced_A_matrix(
+        double in_T,
+        std::vector<double> in_mole_fracs,
+        int N)
+{   
+    T = in_T;
+    mole_fracs = in_mole_fracs;
+    x1 = mole_fracs[0];
+    x2 = mole_fracs[1];
+    std::vector<std::vector<double>> reduced_A(2*N, std::vector<double>(2 * N));
+    // Upper left block
+    for (int p = - N; p < 0; p++){
+        for (int q = - N; q <= p; q++){
+            reduced_A[p + N][q + N] = a(p, q);
+            reduced_A[q + N][p + N] = reduced_A[p + N][q + N]; // Matrix is symmetric
+        }
+    }
+    //Lower left block (and upper right by symmetry)
+    for (int p = 1; p <= N; p++){
+        for (int q = - N; q < 0; q++){
+            reduced_A[p + N - 1][q + N] = a(p, q);
+            reduced_A[q + N][p + N - 1] = reduced_A[p + N - 1][q + N]; // Matrix is symmetric
+        }
+    }
+    //Lower right block
+    for (int p = 1; p <= N; p++){
+        for (int q = 1; q <= p; q++){
+            reduced_A[p + N - 1][q + N - 1] = a(p, q);
+            reduced_A[q + N - 1][p + N - 1] = reduced_A[p + N - 1][q + N - 1]; // Matrix is symmetric
+        }
+    }
+
+    return reduced_A;
+}
+
+std::vector<double> KineticGas::get_alpha_vector(
+    double in_T,
+    double particle_density,
+    std::vector<double> in_mole_fracs,
+    int N)
+{
+    std::vector<double> alpha_vector(2 * N);
+    alpha_vector[N - 1] = - (15.0 / 4.0) * (in_mole_fracs[1] / particle_density) * (2 * BOLTZMANN * in_T / m2);
+    alpha_vector[N] = - (15.0 / 4.0) * (in_mole_fracs[0] / particle_density) * (2 * BOLTZMANN * in_T / m1);
+    return alpha_vector;
+}
+
+KineticGas::KineticGas(std::vector<double> init_mole_weights, 
+        std::vector<std::vector<double>> init_sigmaij)
+        : mole_weights{init_mole_weights},
+        sigmaij{init_sigmaij},
+        m0{0.0}
+    {
+    std::printf("Initializing in cpp");
+    for (int i = 0; i < sigmaij.size(); i++){
+        sigma.push_back(sigmaij[i][i]);
+        m0 += mole_weights[i];
+    }
+    sigma1 = sigma[0];
+    sigma2 = sigma[1];
+    sigma12 = sigmaij[0][1];
+    m1 = mole_weights[0];
+    m2 = mole_weights[1];
+    M1 = mole_weights[0] / m0;
+    M2 = mole_weights[1] / m0;
 }
 
 double KineticGas::omega(int ij, int l, int r){
@@ -311,7 +361,7 @@ double KineticGas::a(int p, int q){
 
 #pragma region // Bindings
 PYBIND11_MODULE(KineticGas, handle){
-    handle.doc() = "This is documentation";
+    handle.doc() = "Is this documentation? This is documentation.";
     handle.def("cpp_tests", &cpp_tests);
     handle.def("ipow", &ipow);
     
@@ -326,14 +376,15 @@ PYBIND11_MODULE(KineticGas, handle){
         .def("eval", &Fac::eval);
     
     py::class_<KineticGas>(handle, "cpp_KineticGas")
-        .def(py::init<std::vector<double>, 
-                        std::vector<std::vector<double>>, 
-                        std::vector<double>,
-                        double,
-                        double,
-                        int>())
-        .def_property_readonly("A_matrix", &KineticGas::get_A)
-        .def_property_readonly("delta_vector", &KineticGas::get_delta)
+        .def(py::init<
+                        std::vector<double>, 
+                        std::vector<std::vector<double>>
+                    >()
+            )
+        .def("get_A_matrix", &KineticGas::get_A_matrix)
+        .def("get_delta_vector", &KineticGas::get_delta_vector)
+        .def("get_reduced_A_matrix", &KineticGas::get_reduced_A_matrix)
+        .def("get_alpha_vector", &KineticGas::get_alpha_vector)
         .def("A", &KineticGas::A)
         .def("A_prime", &KineticGas::A_prime)
         .def("A_trippleprime", &KineticGas::A_trippleprime)

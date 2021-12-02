@@ -8,26 +8,36 @@ class KineticGas{
     std::vector<std::vector<double>> sigmaij;
     std::vector<double> sigma;
     std::vector<double> mole_fracs;
-
-    const int N; // Degree of approximation
     
     // Binary specific code
-    double n, T, m0, M1, M2, x1, x2, m1, m2, sigma1, sigma2, sigma12;
+    double T, m0, M1, M2, x1, x2, m1, m2, sigma1, sigma2, sigma12;
 
-    std::vector<std::vector<double>> A_matrix;
-    std::vector<double> delta_vector;
-
-    KineticGas(std::vector<double> init_mole_weights, 
-            std::vector<std::vector<double>> init_sigmaij, 
-            std::vector<double> init_mole_fracs,
-            double init_T,
-            double init_p,
-            int init_N);
+    KineticGas(std::vector<double> init_mole_weights,
+        std::vector<std::vector<double>> init_sigmaij);
 
     double omega(int ij, int l, int r);
 
-    std::vector<std::vector<double>> get_A();
-    std::vector<double> get_delta();
+    std::vector<std::vector<double>> get_A_matrix(
+        double in_T,
+        std::vector<double> in_mole_fracs,
+        int N);
+
+    std::vector<double> get_delta_vector(
+        double T,
+        double particle_density,
+        int N);
+    
+    std::vector<std::vector<double>> get_reduced_A_matrix(
+        double in_T,
+        std::vector<double> in_mole_fracs,
+        int N);
+    
+    std::vector<double> get_alpha_vector(
+        double T,
+        double particle_density,
+        std::vector<double> mole_fracs,
+        int N
+    );
 
     double A(int p, int q, int r, int l);
     double A_prime(int p, int q, int r, int l);
@@ -46,7 +56,6 @@ double w(int l, int r);
 int cpp_tests();
 
 int kingas_tests();
-
 
 int min(int a, int b);
 double min(double a, double b);
