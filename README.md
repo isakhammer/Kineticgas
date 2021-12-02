@@ -2,7 +2,7 @@
 Implementation of Enskog solutions for diffusion, thermal diffusion and conductivity
 
 ## Dependencies
-C++ module can be compiled as is.
+C++ module requires the [pybind11](https://github.com/pybind/pybind11) package, although removing this should not ammount to more than deleting the final lines in KineticGas.cpp and removing the appropriate `include` statements.
 The Python extension requires the [Thermopack](https://github.com/SINTEF/thermopack) python module (pyctp) and associated dependencies.
 
 ## Acknowledgments and sources
