@@ -4,14 +4,13 @@ import scipy.linalg as lin
 from scipy.constants import Boltzmann, Avogadro
 from scipy.integrate import quad
 import os, sys, platform
-sys.path.append(os.path.dirname(os.getcwd())+'/soret_model')
-sys.path.append(os.path.dirname(os.getcwd())+'/soret_model/cpp_V2')
+sys.path.append(os.path.dirname(os.getcwd())+'/cpp')
 
 if (platform.system() == 'Linux'):
-    sys.path.append(os.path.dirname(os.getcwd())+'/soret_model/cpp_V2/release_ubuntu')
+    sys.path.append(os.path.dirname(os.getcwd())+'/cpp/release_ubuntu')
     from release_ubuntu.KineticGas import cpp_KineticGas
 else:
-    sys.path.append(os.path.dirname(os.getcwd()) + '/soret_model/cpp_V2/release_mac')
+    sys.path.append(os.path.dirname(os.getcwd()) + '/cpp/release_mac')
     from release_mac.KineticGas import cpp_KineticGas
 
 class KineticGas:
