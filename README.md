@@ -2,7 +2,7 @@
 Implementation of Enskog solutions for diffusion, thermal diffusion and conductivity
 
 ## Dependencies
-C++ module requires the [pybind11](https://github.com/pybind/pybind11) package, although removing this should not ammount to more than deleting the final lines in KineticGas.cpp and removing the appropriate `include` statements.
+C++ module requires the [pybind11](https://github.com/pybind/pybind11) package, although removing this should not ammount to more than deleting the final lines in KineticGas.cpp and removing the appropriate `include` statements.\\
 The Python extension requires the [ThermoPack](https://github.com/SINTEF/thermopack) python module (pyctp) and associated dependencies. The ThermoPack module is only used as a database for Mie-parameters. Removing the appropriate import statements and associated function calls will not break the code, but require that Mie-parameters are explicitly supplied.
 
 ## Acknowledgments and sources
