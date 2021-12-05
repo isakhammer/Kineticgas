@@ -187,7 +187,6 @@ KineticGas::KineticGas(std::vector<double> init_mole_weights,
         sigmaij{init_sigmaij},
         m0{0.0}
     {
-    std::printf("Initializing in cpp");
     for (int i = 0; i < sigmaij.size(); i++){
         sigma.push_back(sigmaij[i][i]);
         m0 += mole_weights[i];
