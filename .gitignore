@@ -1,3 +1,5 @@
 .idea
 cpp/pybind11
-cpp/release
+cpp/release_mac
+cpp/release_ubuntu
+venv
