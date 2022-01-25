@@ -3,9 +3,14 @@ from pyctp import saftvrmie
 import scipy.linalg as lin
 from scipy.constants import Boltzmann, Avogadro
 from scipy.integrate import quad
-import os, sys, platform
-
 from KineticGas import cpp_KineticGas
+import warnings
+
+FLT_EPS = 1e-12
+
+def check_valid_composition(x):
+    if abs(sum(x) - 1) > FLT_EPS:
+        warnings.warn('Mole fractions do not sum to unity, sum(x) = '+str(sum(x)))
 
 class KineticGas:
 
@@ -52,13 +57,16 @@ class KineticGas:
         self.cpp_kingas = cpp_KineticGas(self.mole_weights, self.sigma_ij)
 
 
-    def get_A_matrix(self, T, mole_fracs, N=7):
+    def get_A_matrix(self, T, mole_fracs, N=default_N):
+        check_valid_composition(mole_fracs)
         return self.cpp_kingas.get_A_matrix(T, mole_fracs, N)
 
-    def get_reduced_A_matrix(self, T, mole_fracs, N=7):
+    def get_reduced_A_matrix(self, T, mole_fracs, N=default_N):
+        check_valid_composition(mole_fracs)
         return self.cpp_kingas.get_reduced_A_matrix(T, mole_fracs, N)
 
     def compute_d_vector(self, T, particle_density, mole_fracs, N=default_N, BH=False):
+        check_valid_composition(mole_fracs)
         if (T, particle_density, tuple(mole_fracs), N, BH) in self.computed_d_points.keys():
             return self.computed_d_points[(T, particle_density, tuple(mole_fracs), N, BH)]
 
@@ -79,8 +87,9 @@ class KineticGas:
         return (d_1, d0, d1)
 
     def compute_a_vector(self, T, particle_density, mole_fracs, N=default_N, BH=False):
+        check_valid_composition(mole_fracs)
         if (T, particle_density, tuple(mole_fracs), N, BH) in self.computed_a_points.keys():
-            return self.computed_d_points[(T, particle_density, tuple(mole_fracs), N, BH)]
+            return self.computed_a_points[(T, particle_density, tuple(mole_fracs), N, BH)]
 
         if BH:
             sigmaij = self.get_sigma_matrix(self.sigma, BH=BH, T=T)
@@ -97,26 +106,29 @@ class KineticGas:
         return a_1, a1
 
     def alpha_T0(self, T, Vm, x, N=default_N, BH=False):
+        check_valid_composition(x)
         particle_density = Avogadro / Vm
         d_1, d0, d1 = self.compute_d_vector(T, particle_density, x, N=N, BH=BH)
         kT = - (5 / (2 * d0)) * ((x[0] * d1 / np.sqrt(self.M[0])) + (x[1] * d_1 / np.sqrt(self.M[1])))
         kT_vec = np.array([kT, -kT])
-
         return kT_vec * ((1 / np.array(x)) + (1 / (1 - np.array(x))) )
 
     def interdiffusion(self, T, Vm, x, N=default_N, BH=False):
+        check_valid_composition(x)
         particle_density = Avogadro / Vm
         _, d0, _ = self.compute_d_vector(T, particle_density, x, N=N, BH=BH)
 
         return 0.5 * np.product(x) * np.sqrt(2 * Boltzmann * T / self.m0) * d0
 
     def thermal_diffusion(self, T, Vm, x, N=default_N, BH=False):
+        check_valid_composition(x)
         particle_density = Avogadro / Vm
-        d_1, _, d1 = self.compute_d_vector(T, particle_density, x, N=N)
+        d_1, _, d1 = self.compute_d_vector(T, particle_density, x, N=N, BH=BH)
         return - (5 / 4) * np.product(x) * np.sqrt(2 * Boltzmann * T / self.m0) \
                * ((x[0] * d1 / np.sqrt(self.M1)) + (x[1] * d_1 / np.sqrt(self.M2)))
 
     def thermal_conductivity(self, T, Vm, x, N=default_N, BH=False):
+        check_valid_composition(x)
         particle_density = Avogadro / Vm
         a_1, a1 = self.compute_a_vector(T, Vm, x, N=N, BH=BH)
         return - (5 / 4) * Boltzmann * particle_density * (2 * Boltzmann * T / self.m0) \
@@ -156,12 +168,11 @@ class KineticGas:
         return C * epsilon * ((sigma / r) ** lambda_r - (sigma / r) ** lambda_a)
 
 def test():
-    FLT_EPS = 1e-10
     comps = 'AR,HE'
     kingas = KineticGas(comps)
 
     T = 300
-    x = [0.5, 0.3]
+    x = [0.7, 0.3]
     Vm = 24e-3
 
     alpha_T0 = kingas.alpha_T0(T, Vm, x)
@@ -174,7 +185,7 @@ def test():
     kingas.thermal_diffusion(T, Vm, x, BH=True)
     kingas.thermal_conductivity(T, Vm, x, BH=True)
 
-    if abs(alpha_T0 - kingas.alpha_T0(T, Vm, x)) > FLT_EPS:
+    if any(abs(alpha_T0 - kingas.alpha_T0(T, Vm, x)) > FLT_EPS):
         return 1
     if abs(D12 - kingas.interdiffusion(T, Vm, x)) > FLT_EPS:
         return 2

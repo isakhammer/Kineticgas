@@ -2,4 +2,5 @@
 cpp/pybind11
 cpp/release/
 python/venv
+venv/
 *.so
