@@ -1,5 +1,5 @@
-.idea
+.idea/
 cpp/pybind11
-cpp/release_mac
-cpp/release_ubuntu
-venv
+cpp/release/
+python/venv
+*.so
