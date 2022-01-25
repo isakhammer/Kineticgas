@@ -9,7 +9,7 @@ The Python extension requires the [ThermoPack](https://github.com/SINTEF/thermop
 ## Setup
 Build for mac by running `bash cpp/build_mac.sh` from the top-level directory. The same script works for Linux, possibly with minor modifications. For Windows, may God be with you.
 
-Install with `pip` by running `pip install python/` from the top-level directory after activating your python-installation of choice.
+Install with `pip` by running `pip install pykingas/` from the top-level directory after activating your python-installation of choice.
 
 ## Acknowledgments and sources
 This implementation of the Enskog solutions presented by Chapman and Cowling (*The mathematical theory of non-uniform gases* 2nd ed. Cambridge University Press, 1964) utilises the explicit summational expressions for the required bracket integrals published by Tompson, Tipton and Loyalka in *Chapman–Enskog solutions to arbitrary order in Sonine polynomials IV: Summational expressions for the diffusion- and thermal conductivity-related bracket integrals*, [European Journal of Mechanics - B/Fluids, **28**, 6, pp. 695 - 721, 2009](https://doi.org/10.1016/j.euromechflu.2009.05.002).
