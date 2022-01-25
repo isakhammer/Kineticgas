@@ -4,3 +4,4 @@ cpp/release/
 python/venv
 venv/
 *.so
+*/__pycache__/
