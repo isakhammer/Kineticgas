@@ -106,6 +106,16 @@ class KineticGas:
         return a_1, a1
 
     def alpha_T0(self, T, Vm, x, N=default_N, BH=False):
+        '''
+        Compute the thermal diffusion factor
+        :param T: Temperature [K]
+        :param Vm: Molar volume [m3/mol]
+        :param x: Molar composition [-]
+        :param N: Order of Enskog approximation [-]
+        :param BH: Use Barker-Henderson diameters?
+        :return: (ndarray) Thermal diffusion factors [-]
+        '''
+
         check_valid_composition(x)
         particle_density = Avogadro / Vm
         d_1, d0, d1 = self.compute_d_vector(T, particle_density, x, N=N, BH=BH)
@@ -114,6 +124,15 @@ class KineticGas:
         return kT_vec * ((1 / np.array(x)) + (1 / (1 - np.array(x))) )
 
     def interdiffusion(self, T, Vm, x, N=default_N, BH=False):
+        '''
+        Compute the interdiffusion coefficient
+        :param T: Temperature [K]
+        :param Vm: Molar volume [m3/mol]
+        :param x: Molar composition [-]
+        :param N: Order of Enskog approximation [-]
+        :param BH: Use Barker-Henderson diameters?
+        :return: (float) Interdiffusion coefficient [m^{-2}s^{-1}]
+        '''
         check_valid_composition(x)
         particle_density = Avogadro / Vm
         _, d0, _ = self.compute_d_vector(T, particle_density, x, N=N, BH=BH)
@@ -121,6 +140,15 @@ class KineticGas:
         return 0.5 * np.product(x) * np.sqrt(2 * Boltzmann * T / self.m0) * d0
 
     def thermal_diffusion(self, T, Vm, x, N=default_N, BH=False):
+        '''
+        Compute the thermal diffusion ratios
+        :param T: Temperature [K]
+        :param Vm: Molar volume [m3/mol]
+        :param x: Molar composition [-]
+        :param N: Order of Enskog approximation [-]
+        :param BH: Use Barker-Henderson diameters?
+        :return: (ndarray) Thermal diffusion ratios [-]
+        '''
         check_valid_composition(x)
         particle_density = Avogadro / Vm
         d_1, _, d1 = self.compute_d_vector(T, particle_density, x, N=N, BH=BH)
@@ -128,6 +156,15 @@ class KineticGas:
                * ((x[0] * d1 / np.sqrt(self.M1)) + (x[1] * d_1 / np.sqrt(self.M2)))
 
     def thermal_conductivity(self, T, Vm, x, N=default_N, BH=False):
+        '''
+        Compute the Thermal conductivity
+        :param T: Temperature [K]
+        :param Vm: Molar volume [m3/mol]
+        :param x: Molar composition [-]
+        :param N: Order of Enskog approximation [-]
+        :param BH: Use Barker-Henderson diameters?
+        :return: (float) Thermal conductivity [W m^{-2} K^{-1}]
+        '''
         check_valid_composition(x)
         particle_density = Avogadro / Vm
         a_1, a1 = self.compute_a_vector(T, particle_density, x, N=N, BH=BH)

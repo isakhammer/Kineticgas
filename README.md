@@ -11,5 +11,8 @@ Build for mac by running `bash cpp/build_mac.sh` from the top-level directory. T
 
 Install with `pip` by running `pip install pykingas/` from the top-level directory after activating your python-installation of choice.
 
+## Usage
+Initialize a KineticGas object with the desired components, compute diffusion coefficients, thermal diffusion coefficients and thermal conductivity with the respective functions in `py_KineticGas.py`
+
 ## Acknowledgments and sources
 This implementation of the Enskog solutions presented by Chapman and Cowling (*The mathematical theory of non-uniform gases* 2nd ed. Cambridge University Press, 1964) utilises the explicit summational expressions for the required bracket integrals published by Tompson, Tipton and Loyalka in *Chapman–Enskog solutions to arbitrary order in Sonine polynomials IV: Summational expressions for the diffusion- and thermal conductivity-related bracket integrals*, [European Journal of Mechanics - B/Fluids, **28**, 6, pp. 695 - 721, 2009](https://doi.org/10.1016/j.euromechflu.2009.05.002).
