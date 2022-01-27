@@ -3,7 +3,7 @@ from pyctp import saftvrmie
 import scipy.linalg as lin
 from scipy.constants import Boltzmann, Avogadro
 from scipy.integrate import quad
-from KineticGas import cpp_KineticGas
+from pykingas.KineticGas import cpp_KineticGas
 import warnings
 
 FLT_EPS = 1e-12
@@ -100,7 +100,7 @@ class KineticGas:
         A = cpp_kingas.get_reduced_A_matrix(T, mole_fracs, N)
         alpha = cpp_kingas.get_alpha_vector(T, particle_density, mole_fracs, N)
         a = lin.solve(A, alpha)
-        a_1, a1 = a[N - 1], a[N + 1]
+        a_1, a1 = a[N - 1], a[N]
 
         self.computed_a_points[(T, particle_density, tuple(mole_fracs), N, BH)] = (a_1, a1)
         return a_1, a1
@@ -130,8 +130,8 @@ class KineticGas:
     def thermal_conductivity(self, T, Vm, x, N=default_N, BH=False):
         check_valid_composition(x)
         particle_density = Avogadro / Vm
-        a_1, a1 = self.compute_a_vector(T, Vm, x, N=N, BH=BH)
-        return - (5 / 4) * Boltzmann * particle_density * (2 * Boltzmann * T / self.m0) \
+        a_1, a1 = self.compute_a_vector(T, particle_density, x, N=N, BH=BH)
+        return - (5 / 4) * Boltzmann * particle_density * np.sqrt(2 * Boltzmann * T / self.m0) \
                * ((x[0] * a1 / np.sqrt(self.M1)) + (x[1] * a_1 / np.sqrt(self.M2)))
 
     def get_epsilon_matrix(self, eps_div_k):

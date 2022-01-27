@@ -5,4 +5,4 @@ cmake -O3 -Wall -Wextra -Release ..
 make
 cd ../..
 
-cp cpp/release/KineticGas.cpython-39-darwin.so pykingas/libkineticgas.so
+cp cpp/release/KineticGas.cpython-39-darwin.so pykingas/KineticGas.so

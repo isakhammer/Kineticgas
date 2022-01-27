@@ -176,8 +176,8 @@ std::vector<double> KineticGas::get_alpha_vector(
     int N)
 {
     std::vector<double> alpha_vector(2 * N);
-    alpha_vector[N - 1] = - (15.0 / 4.0) * (in_mole_fracs[1] / particle_density) * (2 * BOLTZMANN * in_T / m2);
-    alpha_vector[N] = - (15.0 / 4.0) * (in_mole_fracs[0] / particle_density) * (2 * BOLTZMANN * in_T / m1);
+    alpha_vector[N - 1] = - (15.0 / 4.0) * (in_mole_fracs[1] / particle_density) * sqrt(2 * BOLTZMANN * in_T / m2);
+    alpha_vector[N] = - (15.0 / 4.0) * (in_mole_fracs[0] / particle_density) * sqrt(2 * BOLTZMANN * in_T / m1);
     return alpha_vector;
 }
 
