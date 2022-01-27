@@ -13,4 +13,5 @@ setup(
     author = 'Vegard Gjeldvik Jervell',
     author_email = 'vegard.g.j@icloud.com',
     url = 'https://github.com/vegardjervell/Kineticgas',
+    install_requires=['numpy>=1.22.1']
 )
