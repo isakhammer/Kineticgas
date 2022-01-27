@@ -7,6 +7,8 @@ C++ module uses the [pybind11](https://github.com/pybind/pybind11) package to ex
 The Python extension requires the [ThermoPack](https://github.com/SINTEF/thermopack) python module (pyctp) and associated dependencies. The ThermoPack module is only used as a database for Mie-parameters. Removing the appropriate import statements and associated function calls will not break the code, but require that Mie-parameters are explicitly supplied.
 
 ## Setup
+The package that can be installed with `pip` comes with a pre-compiled file `KineticGas.so`, compiled on MacOS 10.14.6.
+
 Build for mac by running `bash cpp/build_mac.sh` from the top-level directory. The same script works for Linux, possibly with minor modifications. For Windows, may God be with you.
 
 Install with `pip` by running `pip install pykingas/` from the top-level directory after activating your python-installation of choice.

@@ -10,6 +10,7 @@ setup(
     package_data={'pykingas': ['KineticGas.*']},
     description = 'Revised Enskog solutions',
     long_description = readme,
+    long_description_content_type='text/markdown',
     author = 'Vegard Gjeldvik Jervell',
     author_email = 'vegard.g.j@icloud.com',
     url = 'https://github.com/vegardjervell/Kineticgas',
