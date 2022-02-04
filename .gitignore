@@ -8,3 +8,4 @@ venv/
 dist/
 build/
 pykingas.egg-info/
+clean_dist.sh

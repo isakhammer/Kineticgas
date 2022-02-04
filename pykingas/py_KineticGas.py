@@ -33,8 +33,9 @@ class KineticGas:
         self.computed_d_points = {} # dict of state points in which (d_1, d0, d1) have already been computed
         self.computed_a_points = {}  # dict of state points in which (a_1, a1) have already been computed
 
-        self.eos = saftvrmie.saftvrmie() # Only used as interface to mie-parameter database
-        self.eos.init(comps)
+        if (mole_weights is None) or (sigma is None) or (eps_div_k is None):
+            self.eos = saftvrmie.saftvrmie() # Only used as interface to mie-parameter database
+            self.eos.init(comps)
 
         complist = comps.split(',')
         if mole_weights is None:
