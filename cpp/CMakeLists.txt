@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 3.4)
+set(PYBIND11_PYTHON_VERSION "3.9")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 project(Cpp_KineticGas)
 add_subdirectory(pybind11)
 pybind11_add_module(KineticGas STATIC KineticGas.cpp Factorial.cpp)
