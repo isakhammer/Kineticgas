@@ -32,15 +32,15 @@ class KineticGas:
         :param la, lr : (1D array) attractive and repulsive exponent of the pure components [-]
         :param lij : (float) Mixing parameter for sigma (lij > 0 => smaller sigma_12, lij < 0 => larger sigma_12)
         :param kij : (float) Mixing parameter for epsilon (kij > 0 => favours mixing, kij < 0 => favours separation)
-        :param BH : Use Barker-Henderson diameters?
+        :param BH : (bool) Alwayse use Barker-Henderson diameters?
         :param hs_mixing_rule : If "additive", sigma_12 = (1 - lij) * 0.5 * (sigma_1 + sigma_2),
                                 else: Compute sigma_12 from BH using epsilon_12 and additive sigma_12
                                 Only applicable if BH is True
         '''
+        if len(comps.split(',')) > 2:
+            raise IndexError('Current implementation is only binary-compatible!')
+
         self.BH = BH
-        self.T = None
-        self.particle_density = None
-        self.mole_fracs = None
         self.computed_d_points = {} # dict of state points in which (d_1, d0, d1) have already been computed
         self.computed_a_points = {}  # dict of state points in which (a_1, a1) have already been computed
 
@@ -75,21 +75,24 @@ class KineticGas:
 
         if sigma is None:
             sigma = np.array([self.eos.get_pure_fluid_param(i)[1] for i in range(1, len(complist) + 1)])
-        self.sigma_ij = self.get_sigma_matrix(sigma, BH=BH)
+        self.sigma_ij = self.get_sigma_matrix(sigma)  # Note: Will not initialize with BH-diameters even if BH=True,
+                                                      # because a Temperature must be supplied to compute BH-diameter
         self.sigma = np.diag(self.sigma_ij)
 
         self.cpp_kingas = cpp_KineticGas(self.mole_weights, self.sigma_ij)
 
-
     def get_A_matrix(self, T, mole_fracs, N=default_N):
+        # Compute the matrix of a_pq values
         check_valid_composition(mole_fracs)
         return self.cpp_kingas.get_A_matrix(T, mole_fracs, N)
 
     def get_reduced_A_matrix(self, T, mole_fracs, N=default_N):
+        # Compute the matrix of a_pq values, without a_0q and a_p0
         check_valid_composition(mole_fracs)
         return self.cpp_kingas.get_reduced_A_matrix(T, mole_fracs, N)
 
     def compute_d_vector(self, T, particle_density, mole_fracs, N=default_N, BH=False):
+        # Compute (d_{-1}, d_0 and d_1), used in diifusion solutions
         check_valid_composition(mole_fracs)
         if (T, particle_density, tuple(mole_fracs), N, BH) in self.computed_d_points.keys():
             return self.computed_d_points[(T, particle_density, tuple(mole_fracs), N, BH)]
@@ -111,6 +114,7 @@ class KineticGas:
         return (d_1, d0, d1)
 
     def compute_a_vector(self, T, particle_density, mole_fracs, N=default_N, BH=False):
+        # Compute a_{-1} and a_1, used in conductivity solutions
         check_valid_composition(mole_fracs)
         if (T, particle_density, tuple(mole_fracs), N, BH) in self.computed_a_points.keys():
             return self.computed_a_points[(T, particle_density, tuple(mole_fracs), N, BH)]
@@ -130,6 +134,7 @@ class KineticGas:
         return a_1, a1
 
     def alpha_T0(self, T, Vm, x, N=default_N, BH=None):
+        # Compute the thermal diffusion factor (alpha_T)
         if BH is None:
             BH = self.BH
         check_valid_composition(x)
@@ -149,6 +154,7 @@ class KineticGas:
         return 0.5 * np.product(x) * np.sqrt(2 * Boltzmann * T / self.m0) * d0
 
     def thermal_diffusion(self, T, Vm, x, N=default_N, BH=None):
+        # Compute the thermal diffusion coefficient (D_T)
         if BH is None:
             BH = self.BH
         check_valid_composition(x)
