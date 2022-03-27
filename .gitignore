@@ -7,3 +7,6 @@ venv/
 dist/
 build/
 pykingas.egg-info/
+vevn3.8/
+rebuild.sh
+test.py
