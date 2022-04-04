@@ -144,6 +144,10 @@ class KineticGas:
         kT_vec = np.array([kT, -kT])
         return kT_vec * ((1 / np.array(x)) + (1 / (1 - np.array(x))) )
 
+    def soret(self, T, Vm, x, N=default_N, BH=None):
+        # Compute the Soret coefficient
+        return self.alpha_T0(T, Vm, x, N=N, BH=BH) / T
+
     def interdiffusion(self, T, Vm, x, N=default_N, BH=None):
         if BH is None:
             BH = self.BH
