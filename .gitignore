@@ -7,10 +7,6 @@ venv/
 dist/
 build/
 pykingas.egg-info/
-<<<<<<< HEAD
 venv3.8/
-=======
-vevn3.8/
->>>>>>> eee33bda2528ac3647228170907e44e9e88fed01
 rebuild.sh
 test.py
