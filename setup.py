@@ -5,7 +5,7 @@ this_dir = Path(__file__).parent
 readme = (this_dir / 'README.md').read_text()
 setup(
     name='pykingas',
-    version='1.1.4',
+    version='2.0.0',
     packages=['pykingas'],
     package_data={'pykingas': ['KineticGas.*']},
     description='Revised Enskog solutions of the Boltzmann Equations '
