@@ -2,18 +2,31 @@
 #include <vector>
 #include "Factorial.h"
 
+enum potential_modes{
+    HS, // Use Hard-sphere potential for omega-integrals
+    mie // Use Mie-potential for omega-integrals
+};
+
 class KineticGas{
     public:
     std::vector<double> mole_weights;
-    std::vector<std::vector<double>> sigmaij;
+    std::vector<std::vector<double>> sigmaij, epsij, la_ij, lr_ij;
     std::vector<double> sigma;
     std::vector<double> mole_fracs;
+    const int potential_mode;
     
-    // Binary specific code
-    double T, m0, M1, M2, x1, x2, m1, m2, sigma1, sigma2, sigma12;
+    double T, m0, M1, M2, x1, x2, m1, m2, 
+            sigma1, sigma2, sigma12, 
+            eps1, eps2, eps12,
+            la1, la2, la12,
+            lr1, lr2, lr12;
 
     KineticGas(std::vector<double> init_mole_weights,
-        std::vector<std::vector<double>> init_sigmaij);
+        std::vector<std::vector<double>> init_sigmaij,
+        std::vector<std::vector<double>> init_epsij,
+        std::vector<std::vector<double>> init_la,
+        std::vector<std::vector<double>> init_lr,
+        int potential_mode);
 
     double omega(int ij, int l, int r);
 

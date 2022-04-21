@@ -12,6 +12,7 @@ def check_valid_composition(x):
     if abs(sum(x) - 1) > FLT_EPS:
         warnings.warn('Mole fractions do not sum to unity, sum(x) = '+str(sum(x)))
 
+potential_mode_map = {'HS' : 0, 'Mie' : 1} # Map string identifiers to corresponding int indentifiers used on cpp-side
 class KineticGas:
 
     default_N = 4
@@ -19,7 +20,8 @@ class KineticGas:
     def __init__(self, comps,
                  mole_weights=None, sigma=None, eps_div_k=None,
                  la=None, lr=None, lij=0, kij=0,
-                 BH=False, hs_mixing_rule='additive'):
+                 BH=False, hs_mixing_rule='additive',
+                 potential_mode='HS'):
         '''
         :param comps (str): Comma-separated list of components, following Thermopack-convention
         :param BH (bool) : Use Barker-Henderson diameters?
@@ -36,11 +38,15 @@ class KineticGas:
         :param hs_mixing_rule : If "additive", sigma_12 = (1 - lij) * 0.5 * (sigma_1 + sigma_2),
                                 else: Compute sigma_12 from BH using epsilon_12 and additive sigma_12
                                 Only applicable if BH is True
+        :param potential_mode (str) : What potential to use for collision integrals. Options are
+                                        'HS' : Use hard-sphere potential
+                                        'Mie' : Use Mie-potential
         '''
         if len(comps.split(',')) > 2:
             raise IndexError('Current implementation is only binary-compatible!')
 
         self.BH = BH
+        self.potential_mode = potential_mode
         self.computed_d_points = {} # dict of state points in which (d_1, d0, d1) have already been computed
         self.computed_a_points = {}  # dict of state points in which (a_1, a1) have already been computed
 
@@ -79,7 +85,7 @@ class KineticGas:
                                                       # because a Temperature must be supplied to compute BH-diameter
         self.sigma = np.diag(self.sigma_ij)
 
-        self.cpp_kingas = cpp_KineticGas(self.mole_weights, self.sigma_ij)
+        self.cpp_kingas = cpp_KineticGas(self.mole_weights, self.sigma_ij, self.epsilon_ij, self.la, self.lr, potential_mode_map[self.potential_mode])
 
     def get_A_matrix(self, T, mole_fracs, N=default_N):
         # Compute the matrix of a_pq values
@@ -99,7 +105,7 @@ class KineticGas:
 
         if BH:
             sigmaij = self.get_sigma_matrix(self.sigma, BH=BH, T=T)
-            cpp_kingas = cpp_KineticGas(self.mole_weights, sigmaij)
+            cpp_kingas = cpp_KineticGas(self.mole_weights, sigmaij, self.epsilon_ij, self.la, self.lr, potential_mode_map[self.potential_mode])
 
         else:
             cpp_kingas = self.cpp_kingas
@@ -121,7 +127,7 @@ class KineticGas:
 
         if BH:
             sigmaij = self.get_sigma_matrix(self.sigma, BH=BH, T=T)
-            cpp_kingas = cpp_KineticGas(self.mole_weights, sigmaij)
+            cpp_kingas = cpp_KineticGas(self.mole_weights, sigmaij, self.epsilon_ij, self.la, self.lr, potential_mode_map[self.potential_mode])
         else:
             cpp_kingas = self.cpp_kingas
 

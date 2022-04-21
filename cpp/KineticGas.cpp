@@ -61,8 +61,11 @@ int kingas_tests(){
     
     std::vector<double> Mm{5.5, 10.1};
     std::vector<std::vector<double>> sigmaij {{1.5, 2.0}, {2.0, 2.5}};
+    std::vector<std::vector<double>> epsij {{1.5, 2.0}, {2.0, 2.5}};
+    std::vector<std::vector<double>> la {{6.0, 6.0}, {6.0, 6.0}};
+    std::vector<std::vector<double>> lr {{12.0, 12.0}, {12.0, 12.0}};
     std::vector<double> x {0.3, 0.7};
-    KineticGas k{Mm, sigmaij};
+    KineticGas k{Mm, sigmaij, epsij, la, lr, 0};
     std::vector<double> tsts {k.m0 - 15.6, k.sigma1 - 1.5, k.sigma2 - 2.5, k.sigma12 - 2.0};
     for (double t : tsts){
         if (fabs(t) > FLTEPS){
@@ -139,6 +142,7 @@ std::vector<std::vector<double>> KineticGas::get_reduced_A_matrix(
         std::vector<double> in_mole_fracs,
         int N)
 {   
+    // Get A-matrix, exluding central row and column, where (p == 0 or q == 0)
     T = in_T;
     mole_fracs = in_mole_fracs;
     x1 = mole_fracs[0];
@@ -181,11 +185,19 @@ std::vector<double> KineticGas::get_alpha_vector(
     return alpha_vector;
 }
 
-KineticGas::KineticGas(std::vector<double> init_mole_weights, 
-        std::vector<std::vector<double>> init_sigmaij)
+KineticGas::KineticGas(std::vector<double> init_mole_weights,
+        std::vector<std::vector<double>> init_sigmaij,
+        std::vector<std::vector<double>> init_epsij,
+        std::vector<std::vector<double>> init_la,
+        std::vector<std::vector<double>> init_lr,
+        int potential_mode)
         : mole_weights{init_mole_weights},
         sigmaij{init_sigmaij},
-        m0{0.0}
+        epsij{init_epsij},
+        la_ij{init_la},
+        lr_ij{init_lr},
+        m0{0.0},
+        potential_mode{potential_mode}
     {
     for (int i = 0; i < sigmaij.size(); i++){
         sigma.push_back(sigmaij[i][i]);
@@ -194,6 +206,19 @@ KineticGas::KineticGas(std::vector<double> init_mole_weights,
     sigma1 = sigma[0];
     sigma2 = sigma[1];
     sigma12 = sigmaij[0][1];
+
+    eps1 = epsij[0][0];
+    eps2 = epsij[1][1];
+    eps12 = epsij[0][1];
+
+    la1 = la_ij[0][0];
+    la2 = la_ij[1][1];
+    la12 = la_ij[0][1];
+
+    lr1 = lr_ij[0][0];
+    lr2 = lr_ij[1][1];
+    lr12 = lr_ij[0][1];
+
     m1 = mole_weights[0];
     m2 = mole_weights[1];
     M1 = mole_weights[0] / m0;
@@ -377,7 +402,11 @@ PYBIND11_MODULE(KineticGas, handle){
     py::class_<KineticGas>(handle, "cpp_KineticGas")
         .def(py::init<
                         std::vector<double>, 
-                        std::vector<std::vector<double>>
+                        std::vector<std::vector<double>>,
+                        std::vector<std::vector<double>>,
+                        std::vector<std::vector<double>>,
+                        std::vector<std::vector<double>>,
+                        int
                     >()
             )
         .def("get_A_matrix", &KineticGas::get_A_matrix)
