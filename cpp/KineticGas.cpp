@@ -5,6 +5,7 @@
 #include <vector>
 #include <algorithm>
 #include <thread>
+#include <functional>
 
 constexpr double BOLTZMANN = 1.38064852e-23;
 constexpr double GAS_CONSTANT = 8.31446261815324;
@@ -15,7 +16,7 @@ constexpr double FLTEPS = 1e-10;
 
 namespace py = pybind11;
 
-#pragma region // Helper functions
+#pragma region // Global helper functions
 
 int min(int a, int b){
     if (a <= b){
@@ -42,6 +43,14 @@ double max(double a, double b){
     return b;
 }
 
+int delta(int i, int j){ // Kronecker delta
+    if (i == j){
+        return 1;
+    }
+    return 0;
+}
+
+#pragma endregion
 
 #pragma region // Tests
 int cpp_tests(){
@@ -89,22 +98,62 @@ int kingas_tests(){
 }
 #pragma endregion
 
-#pragma region // Helper functions and initializer
-
-int delta(int i, int j){
-    if (i == j){
-        return 1;
+#pragma region // Constructor
+KineticGas::KineticGas(std::vector<double> init_mole_weights,
+        std::vector<std::vector<double>> init_sigmaij,
+        std::vector<std::vector<double>> init_epsij,
+        std::vector<std::vector<double>> init_la,
+        std::vector<std::vector<double>> init_lr,
+        int potential_mode)
+        : mole_weights{init_mole_weights},
+        sigmaij{init_sigmaij},
+        epsij{init_epsij},
+        la_ij{init_la},
+        lr_ij{init_lr},
+        m0{0.0},
+        potential_mode{potential_mode}
+    {
+    for (int i = 0; i < sigmaij.size(); i++){
+        sigma.push_back(sigmaij[i][i]);
+        m0 += mole_weights[i];
     }
-    return 0;
+    sigma1 = sigma[0];
+    sigma2 = sigma[1];
+    sigma12 = sigmaij[0][1];
+
+    eps1 = epsij[0][0];
+    eps2 = epsij[1][1];
+    eps12 = epsij[0][1];
+
+    la1 = la_ij[0][0];
+    la2 = la_ij[1][1];
+    la12 = la_ij[0][1];
+
+    lr1 = lr_ij[0][0];
+    lr2 = lr_ij[1][1];
+    lr12 = lr_ij[0][1];
+
+    m1 = mole_weights[0];
+    m2 = mole_weights[1];
+    M1 = mole_weights[0] / m0;
+    M2 = mole_weights[1] / m0;
+
+    switch (potential_mode)
+    {
+    case HS_potential_idx:
+        omega_p = &KineticGas::omega_HS;
+        break;
+    case mie_potential_idx:
+        omega_p = &KineticGas::omega_Mie;
+        break;
+    default:
+        throw "Invalid potential mode!";
+    }
 }
 
-double w(int l, int r){
-    int f = Fac(r + 1).eval();
-    if (l % 2 == 0){
-        return 0.25 * (2 - ((1.0 / (l + 1)) * 2)) * f;
-    }
-    return 0.5 * f;
-}
+#pragma endregion
+
+#pragma region // Helper functions
 
 std::vector<std::vector<double>> KineticGas::get_A_matrix(
         double in_T,
@@ -185,53 +234,6 @@ std::vector<double> KineticGas::get_alpha_vector(
     return alpha_vector;
 }
 
-KineticGas::KineticGas(std::vector<double> init_mole_weights,
-        std::vector<std::vector<double>> init_sigmaij,
-        std::vector<std::vector<double>> init_epsij,
-        std::vector<std::vector<double>> init_la,
-        std::vector<std::vector<double>> init_lr,
-        int potential_mode)
-        : mole_weights{init_mole_weights},
-        sigmaij{init_sigmaij},
-        epsij{init_epsij},
-        la_ij{init_la},
-        lr_ij{init_lr},
-        m0{0.0},
-        potential_mode{potential_mode}
-    {
-    for (int i = 0; i < sigmaij.size(); i++){
-        sigma.push_back(sigmaij[i][i]);
-        m0 += mole_weights[i];
-    }
-    sigma1 = sigma[0];
-    sigma2 = sigma[1];
-    sigma12 = sigmaij[0][1];
-
-    eps1 = epsij[0][0];
-    eps2 = epsij[1][1];
-    eps12 = epsij[0][1];
-
-    la1 = la_ij[0][0];
-    la2 = la_ij[1][1];
-    la12 = la_ij[0][1];
-
-    lr1 = lr_ij[0][0];
-    lr2 = lr_ij[1][1];
-    lr12 = lr_ij[0][1];
-
-    m1 = mole_weights[0];
-    m2 = mole_weights[1];
-    M1 = mole_weights[0] / m0;
-    M2 = mole_weights[1] / m0;
-}
-
-double KineticGas::omega(int ij, int l, int r){
-    double val;
-    if (ij == 1 || ij == 2){
-        return pow(sigma[ij - 1], 2) * sqrt((PI * BOLTZMANN * T) / mole_weights[ij - 1]) * w(l, r);
-    }
-    return 0.5 * pow(sigma12, 2) * sqrt(2 * PI * BOLTZMANN * T / (m0 * M1 * M2)) * w(l, r);
-}
 #pragma endregion
 
 #pragma region // A-functions
@@ -381,7 +383,32 @@ double KineticGas::a(int p, int q){
     }
 }
 #pragma endregion
-#pragma endregion
+
+#pragma region // Collision integrals for various potentials
+
+double KineticGas::omega(int ij, int l, int r){
+    std::invoke(omega_p, this, ij, l, r);
+}
+
+double KineticGas::w_HS(int l, int r){
+    int f = Fac(r + 1).eval();
+    if (l % 2 == 0){
+        return 0.25 * (2 - ((1.0 / (l + 1)) * 2)) * f;
+    }
+    return 0.5 * f;
+}
+
+double KineticGas::omega_HS(int ij, int l, int r){
+    double val;
+    if (ij == 1 || ij == 2){
+        return pow(sigma[ij - 1], 2) * sqrt((PI * BOLTZMANN * T) / mole_weights[ij - 1]) * w_HS(l, r);
+    }
+    return 0.5 * pow(sigma12, 2) * sqrt(2 * PI * BOLTZMANN * T / (m0 * M1 * M2)) * w_HS(l, r);
+}
+
+double KineticGas::omega_Mie(int ij, int l, int r){
+    throw "Mie potential is not implemented!";
+}
 
 #pragma region // Bindings
 PYBIND11_MODULE(KineticGas, handle){

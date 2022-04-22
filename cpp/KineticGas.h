@@ -3,10 +3,11 @@
 #include "Factorial.h"
 
 enum potential_modes{
-    HS, // Use Hard-sphere potential for omega-integrals
-    mie // Use Mie-potential for omega-integrals
+    HS_potential_idx, // Use Hard-sphere potential for omega-integrals
+    mie_potential_idx // Use Mie-potential for omega-integrals
 };
 
+//typedef  double (KineticGas::*collision_integral)(int ij, int l, int r);  // Pointer to collision integral
 class KineticGas{
     public:
     std::vector<double> mole_weights;
@@ -29,6 +30,12 @@ class KineticGas{
         int potential_mode);
 
     double omega(int ij, int l, int r);
+
+    using FunctionType = double(KineticGas::*)(int, int, int);
+    double omega_HS(int ij, int l, int r);
+    double w_HS(int l, int r);
+    double omega_Mie(int ij, int l, int r);
+    FunctionType omega_p;
 
     std::vector<std::vector<double>> get_A_matrix(
         double in_T,
@@ -64,7 +71,6 @@ class KineticGas{
 };
 
 int delta(int i, int j);
-double w(int l, int r);
 
 int cpp_tests();
 
