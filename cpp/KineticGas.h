@@ -20,7 +20,8 @@ class KineticGas{
             sigma1, sigma2, sigma12, 
             eps1, eps2, eps12,
             la1, la2, la12,
-            lr1, lr2, lr12;
+            lr1, lr2, lr12,
+            C1, C2, C12;
 
     KineticGas(std::vector<double> init_mole_weights,
         std::vector<std::vector<double>> init_sigmaij,
@@ -31,11 +32,18 @@ class KineticGas{
 
     double omega(int ij, int l, int r);
 
-    using FunctionType = double(KineticGas::*)(int, int, int);
-    double omega_HS(int ij, int l, int r);
-    double w_HS(int l, int r);
-    double omega_Mie(int ij, int l, int r);
-    FunctionType omega_p;
+    using CollisionIntegralPointer = double(KineticGas::*)(int, int, int);
+    double w_HS(int ij, int l, int r); // Dimentionless hard-sphere collision integral
+    double w_spherical_potential(int ij, int l, int r); // Dimentionless collision integral for spherical potentials
+    CollisionIntegralPointer w_p;
+
+    double potential(int ij, double r, double theta);
+
+    using PotentialPointer = double(KineticGas::*)(int, double, double);
+    double mie_potential(int ij, double r, double theta);
+    double HS_potential(int ij, double r, double theta);
+    PotentialPointer potential_p;
+    double chi(double g, double b);
 
     std::vector<std::vector<double>> get_A_matrix(
         double in_T,

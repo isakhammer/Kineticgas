@@ -133,6 +133,10 @@ KineticGas::KineticGas(std::vector<double> init_mole_weights,
     lr2 = lr_ij[1][1];
     lr12 = lr_ij[0][1];
 
+    C1 = (lr1 / (lr1 - la1)) * pow(lr1 / la1, (la1 / (lr1 - la1)));
+    C2 = (lr2 / (lr2 - la2)) * pow(lr2 / la2, (la2 / (lr2 - la2)));
+    C12 = (lr12 / (lr12 - la12)) * pow(lr12 / la12, (la12 / (lr12 - la12)));
+
     m1 = mole_weights[0];
     m2 = mole_weights[1];
     M1 = mole_weights[0] / m0;
@@ -141,10 +145,12 @@ KineticGas::KineticGas(std::vector<double> init_mole_weights,
     switch (potential_mode)
     {
     case HS_potential_idx:
-        omega_p = &KineticGas::omega_HS;
+        w_p = &KineticGas::w_HS;
+        potential_p = &KineticGas::HS_potential;
         break;
     case mie_potential_idx:
-        omega_p = &KineticGas::omega_Mie;
+        w_p = &KineticGas::w_spherical_potential;
+        potential_p = &KineticGas::mie_potential;
         break;
     default:
         throw "Invalid potential mode!";
@@ -387,10 +393,15 @@ double KineticGas::a(int p, int q){
 #pragma region // Collision integrals for various potentials
 
 double KineticGas::omega(int ij, int l, int r){
-    std::invoke(omega_p, this, ij, l, r);
+    double w = std::invoke(w_p, this, l, r); // DOES NOT WORK
+    if (ij == 1 || ij == 2){
+        return pow(sigma[ij - 1], 2) * sqrt((PI * BOLTZMANN * T) / mole_weights[ij - 1]) * w;
+    }
+    return 0.5 * pow(sigma12, 2) * sqrt(2 * PI * BOLTZMANN * T / (m0 * M1 * M2)) * w;
 }
 
-double KineticGas::w_HS(int l, int r){
+// Hard-sphere potential
+double KineticGas::w_HS(int ij, int l, int r){
     int f = Fac(r + 1).eval();
     if (l % 2 == 0){
         return 0.25 * (2 - ((1.0 / (l + 1)) * 2)) * f;
@@ -398,17 +409,56 @@ double KineticGas::w_HS(int l, int r){
     return 0.5 * f;
 }
 
-double KineticGas::omega_HS(int ij, int l, int r){
-    double val;
-    if (ij == 1 || ij == 2){
-        return pow(sigma[ij - 1], 2) * sqrt((PI * BOLTZMANN * T) / mole_weights[ij - 1]) * w_HS(l, r);
-    }
-    return 0.5 * pow(sigma12, 2) * sqrt(2 * PI * BOLTZMANN * T / (m0 * M1 * M2)) * w_HS(l, r);
-}
-
-double KineticGas::omega_Mie(int ij, int l, int r){
+// Mie-potential
+double KineticGas::w_spherical_potential(int ij, int l, int r){
     throw "Mie potential is not implemented!";
 }
+
+#pragma endregion
+
+#pragma region // Various intermolecular potentials
+
+double KineticGas::potential(int ij, double r, double theta){
+    std::invoke(potential_p, this, ij, r, theta);
+}
+
+double KineticGas::HS_potential(int ij, double r, double theta){
+    if (ij == 1){
+        if (r > sigma1){
+            return 0.0;
+        }
+        return 1e300 * pow(sigma1 / r, 20);
+    }
+    else if (ij == 2){
+        if (r > sigma2){
+            return 0.0;
+        }
+        return 1e300 * pow(sigma2 / r, 20);
+    }
+    else{
+        if (r > sigma12){
+            return 0.0;
+        }
+        return 1e300 * pow(sigma12 / r, 20);
+    }
+}
+
+double KineticGas::mie_potential(int ij, double r, double theta){
+    if (ij == 1){
+        return C1 * eps1 * (pow(sigma1 / r, lr1) - pow(sigma1 / r, la1));
+    }
+    else if (ij == 2){
+        return C2 * eps2 * (pow(sigma2 / r, lr2) - pow(sigma2 / r, la2));
+    }
+    else { // (ij == 12 || ij == 21)
+        return C12 * eps12 * (pow(sigma12 / r, lr12) - pow(sigma12 / r, la12));
+    }
+}
+
+double chi(double g, double b){
+    throw "Chi-function is not implemented!";
+}
+#pragma endregion
 
 #pragma region // Bindings
 PYBIND11_MODULE(KineticGas, handle){
