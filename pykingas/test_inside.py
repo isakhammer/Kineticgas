@@ -1,6 +1,14 @@
-print('Testing')
-from pykingas import py_KineticGas as pykg
-kin = pykg.KineticGas('AR,HE')
+print('Testing from', __file__)
+try:
+    import pyctp
+except:
+    print('Missing module dependency pyctp (ThermoPack)')
+    
+from pykingas import KineticGas, py_KineticGas as pykg
+kin = KineticGas('AR,HE')
 a = pykg.test()
-print('Test exit code was :', a)
+if a == 0:
+    print('Python test was successful!')
+else:
+    print('Python test failed with exit code :', a)
 exit(a)
