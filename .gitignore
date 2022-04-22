@@ -10,3 +10,5 @@ pykingas.egg-info/
 venv3.8/
 rebuild.sh
 test.py
+.vscode/
+.DS_Store
