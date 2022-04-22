@@ -228,22 +228,25 @@ class KineticGas:
 
 def test():
     comps = 'AR,HE'
-    kingas = KineticGas(comps)
+    kingas = KineticGas(comps, BH=False)
 
     T = 300
     x = [0.7, 0.3]
     Vm = 24e-3
 
+    # Compute some values
     alpha_T0 = kingas.alpha_T0(T, Vm, x)
     D12 = kingas.interdiffusion(T, Vm, x)
     DT = kingas.thermal_diffusion(T, Vm, x)
     thermal_cond = kingas.thermal_conductivity(T, Vm, x)
 
+    # Compute values without saving to variables
     kingas.alpha_T0(T, Vm, x, BH=True)
     kingas.interdiffusion(T, Vm, x, BH=True)
     kingas.thermal_diffusion(T, Vm, x, BH=True)
     kingas.thermal_conductivity(T, Vm, x, BH=True)
 
+    # Recompute the first values, check that they are the same as before.
     if any(abs(alpha_T0 - kingas.alpha_T0(T, Vm, x)) > FLT_EPS):
         return 1
     if abs(D12 - kingas.interdiffusion(T, Vm, x)) > FLT_EPS:
