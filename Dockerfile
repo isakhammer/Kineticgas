@@ -19,9 +19,9 @@ RUN apt-get install -yq git cmake make
 # python3.8
 RUN add-apt-repository -y ppa:deadsnakes/ppa
 RUN apt-get -y update
-RUN apt-get install -y python3.8 python3.8-tk python3.8-dev
+RUN apt-get install -y python3.9 python3.9-tk python3.9-dev
 RUN apt-get -y install python3-pip
-RUN /usr/bin/python3.8 -m pip install --upgrade pip
+RUN /usr/bin/python3.9 -m pip install --upgrade pip
 RUN pip3 install --upgrade pip
 
 
@@ -32,8 +32,10 @@ WORKDIR $CODE_DIR
 # Copy all files from host to container
 COPY . .
 
-RUN pip3 install -r requirements.txt
-RUN . build_dist.sh
+RUN . cpp/build_mac.sh
+# RUN pip3 install -r requirements.txt
+# RUN pip3 install pykingas/
+# RUN . build_dist.sh
 
 
 
