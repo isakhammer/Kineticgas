@@ -12,3 +12,4 @@ rebuild.sh
 test.py
 .vscode/
 .DS_Store
+sandbox.py
