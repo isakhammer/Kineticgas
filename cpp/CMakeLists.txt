@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.4)
 set(PYBIND11_PYTHON_VERSION "3.9")
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -std=c++17")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unknown-pragmas -std=c++17")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 project(KineticGas)
 add_subdirectory(pybind11)

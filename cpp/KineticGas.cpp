@@ -120,22 +120,42 @@ KineticGas::KineticGas(std::vector<double> init_mole_weights,
     sigma1 = sigma[0];
     sigma2 = sigma[1];
     sigma12 = sigmaij[0][1];
+    sigma_map[1] = sigma1;
+    sigma_map[2] = sigma2;
+    sigma_map[12] = sigma12;
+    sigma_map[21] = sigma12;
 
     eps1 = epsij[0][0];
     eps2 = epsij[1][1];
     eps12 = epsij[0][1];
+    eps_map[1] = eps1;
+    eps_map[2] = eps2;
+    eps_map[12] = eps12;
+    eps_map[21] = eps12;
 
     la1 = la_ij[0][0];
     la2 = la_ij[1][1];
     la12 = la_ij[0][1];
+    la_map[1] = la1;
+    la_map[2] = la2;
+    la_map[12] = la12;
+    la_map[21] = la12;
 
     lr1 = lr_ij[0][0];
     lr2 = lr_ij[1][1];
     lr12 = lr_ij[0][1];
+    lr_map[1] = lr1;
+    lr_map[2] = lr2;
+    lr_map[12] = lr12;
+    lr_map[21] = lr12;
 
     C1 = (lr1 / (lr1 - la1)) * pow(lr1 / la1, (la1 / (lr1 - la1)));
     C2 = (lr2 / (lr2 - la2)) * pow(lr2 / la2, (la2 / (lr2 - la2)));
     C12 = (lr12 / (lr12 - la12)) * pow(lr12 / la12, (la12 / (lr12 - la12)));
+    C_map[1] = C1;
+    C_map[2] = C2;
+    C_map[12] = C12;
+    C_map[21] = C12;
 
     m1 = mole_weights[0];
     m2 = mole_weights[1];
@@ -147,10 +167,12 @@ KineticGas::KineticGas(std::vector<double> init_mole_weights,
     case HS_potential_idx:
         w_p = &KineticGas::w_HS;
         potential_p = &KineticGas::HS_potential;
+        p_potential_derivative_r = &KineticGas::HS_potential_derivative;
         break;
     case mie_potential_idx:
         w_p = &KineticGas::w_spherical_potential;
         potential_p = &KineticGas::mie_potential;
+        p_potential_derivative_r = &KineticGas::mie_potential_derivative;
         break;
     default:
         throw "Invalid potential mode!";
@@ -393,7 +415,7 @@ double KineticGas::a(int p, int q){
 #pragma region // Collision integrals for various potentials
 
 double KineticGas::omega(int ij, int l, int r){
-    double w = std::invoke(w_p, this, l, r); // DOES NOT WORK
+    double w = std::invoke(w_p, this, ij, l, r); // w_p is a pointer to the dimentionless collision integral corresponding to this.potential_mode
     if (ij == 1 || ij == 2){
         return pow(sigma[ij - 1], 2) * sqrt((PI * BOLTZMANN * T) / mole_weights[ij - 1]) * w;
     }
@@ -411,7 +433,7 @@ double KineticGas::w_HS(int ij, int l, int r){
 
 // Mie-potential
 double KineticGas::w_spherical_potential(int ij, int l, int r){
-    throw "Mie potential is not implemented!";
+    throw "Collision integral for Mie potential is not implemented!";
 }
 
 #pragma endregion
@@ -422,40 +444,69 @@ double KineticGas::potential(int ij, double r, double theta){
     std::invoke(potential_p, this, ij, r, theta);
 }
 
+double KineticGas::potential_derivative_r(int ij, double r, double theta){
+    std::invoke(p_potential_derivative_r, this, ij, r, theta);
+}
+
 double KineticGas::HS_potential(int ij, double r, double theta){
-    if (ij == 1){
-        if (r > sigma1){
-            return 0.0;
-        }
-        return 1e300 * pow(sigma1 / r, 20);
+    if (r > sigma_map[ij]){
+        return 0.0;
     }
-    else if (ij == 2){
-        if (r > sigma2){
-            return 0.0;
-        }
-        return 1e300 * pow(sigma2 / r, 20);
+    return 1e30;
+}
+
+double KineticGas::HS_potential_derivative(int ij, double r, double theta){
+    if (r < sigma_map[ij]){
+        return - 1e30;
     }
-    else{
-        if (r > sigma12){
-            return 0.0;
-        }
-        return 1e300 * pow(sigma12 / r, 20);
-    }
+    return 0.0;
 }
 
 double KineticGas::mie_potential(int ij, double r, double theta){
-    if (ij == 1){
-        return C1 * eps1 * (pow(sigma1 / r, lr1) - pow(sigma1 / r, la1));
-    }
-    else if (ij == 2){
-        return C2 * eps2 * (pow(sigma2 / r, lr2) - pow(sigma2 / r, la2));
-    }
-    else { // (ij == 12 || ij == 21)
-        return C12 * eps12 * (pow(sigma12 / r, lr12) - pow(sigma12 / r, la12));
-    }
+    return C_map[ij] * eps_map[ij] * (pow(sigma_map[ij] / r, lr_map[ij]) - pow(sigma_map[ij] / r, la_map[ij]));
 }
 
-double chi(double g, double b){
+double KineticGas::mie_potential_derivative(int ij, double r, double theta){
+    return C_map[ij] * eps_map[ij] * ((- lr_map[ij] * pow(sigma_map[ij], lr_map[ij]) / pow(r, lr_map[ij] - 1)) + la_map[ij] * pow(sigma_map[ij], la_map[ij]) / pow(r, la_map[ij] - 1) );
+}
+
+#pragma endregion
+
+#pragma region // Helper funcions for computing dimentionless collision integrals
+
+
+double KineticGas::theta(int ij, double T, double r_prime, double g, double b){
+
+}
+
+double KineticGas::theta_integrand(int ij, double T, double r, double g, double b){
+    // Passing dummy value "1.0" to potential. Mie potential is spherical, so not a function of last parameter (theta).
+    return pow((pow(r, 4) / pow(b, 2)) * (1.0 - potential(ij, r, 1.0) / (BOLTZMANN * T * pow(g, 2))) - pow(r, 2), -0.5);
+}
+
+double KineticGas::get_R_rootfunc(int ij, double T, double g, double b, double& r){
+    return (potential(ij, r, 1.0) / (BOLTZMANN * T * pow(g, 2))) + pow(b / r, 2) - 1;
+}
+
+double KineticGas::get_R_rootfunc_derivative(int ij, double T, double g, double b, double& r){
+    return (potential_derivative_r(ij, r, 1.0) / (BOLTZMANN * T * pow(g, 2))) - 2 * pow(b, 2) / pow(r, 3);
+}
+
+double KineticGas::get_R(int ij, double T, double g, double b){
+    double delta{100.0};
+    double tol = 1e-12;
+    double r = b;
+    double next_r;
+    do{
+        next_r = r - get_R_rootfunc_derivative(ij, T, g, b, r) / get_R_rootfunc(ij, T, g, b, r);
+        delta = abs(r - next_r);
+        r = next_r;
+    }
+    while (delta > tol);
+    return r;
+}
+
+double KineticGas::chi(double g, double b){
     throw "Chi-function is not implemented!";
 }
 #pragma endregion

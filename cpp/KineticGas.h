@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <map>
 #include "Factorial.h"
 
 enum potential_modes{
@@ -23,6 +24,12 @@ class KineticGas{
             lr1, lr2, lr12,
             C1, C2, C12;
 
+    std::map<int, double> sigma_map;
+    std::map<int, double> eps_map;
+    std::map<int, double> la_map;
+    std::map<int, double> lr_map;
+    std::map<int, double> C_map;
+
     KineticGas(std::vector<double> init_mole_weights,
         std::vector<std::vector<double>> init_sigmaij,
         std::vector<std::vector<double>> init_epsij,
@@ -30,19 +37,35 @@ class KineticGas{
         std::vector<std::vector<double>> init_lr,
         int potential_mode);
 
-    double omega(int ij, int l, int r);
+    // Collision integrals
+    double omega(int ij, int l, int r); // Calls the dimentionless collision integral function pointed to by "w_p", selected at initialisation with the "potential_mode" parameter.
 
     using CollisionIntegralPointer = double(KineticGas::*)(int, int, int);
     double w_HS(int ij, int l, int r); // Dimentionless hard-sphere collision integral
     double w_spherical_potential(int ij, int l, int r); // Dimentionless collision integral for spherical potentials
-    CollisionIntegralPointer w_p;
+    CollisionIntegralPointer w_p; // Will point to one of the above dimentionless collision integrals
 
-    double potential(int ij, double r, double theta);
+    // Potential models
+    double potential(int ij, double r, double theta); // Passes call to the potential corresponding to "potential_mode", using the pointer "potential_p"
+    double potential_derivative_r(int ij, double r, double theta);
 
     using PotentialPointer = double(KineticGas::*)(int, double, double);
-    double mie_potential(int ij, double r, double theta);
     double HS_potential(int ij, double r, double theta);
-    PotentialPointer potential_p;
+    double mie_potential(int ij, double r, double theta);
+    PotentialPointer potential_p; // Will point to one of the above potentials
+
+    using PotentialDerivativePointer = double(KineticGas::*)(int, double, double);
+    double HS_potential_derivative(int ij, double r, double theta);
+    double mie_potential_derivative(int ij, double r, double theta);
+    PotentialDerivativePointer p_potential_derivative_r; // Will point to one of the above potential derivatives
+
+    // Helper functions for computing dimentionless collision integrals
+    double mie_potential_derivative(int& ij, double& r);
+    double theta(int ij, double T, double r_prime, double g, double b);
+    double theta_integrand(int ij, double T, double r, double g, double b);
+    double get_R(int ij, double T, double g, double b);
+    double get_R_rootfunc(int ij, double T, double g, double b, double& r);
+    double get_R_rootfunc_derivative(int ij, double T, double g, double b, double& r);
     double chi(double g, double b);
 
     std::vector<std::vector<double>> get_A_matrix(
