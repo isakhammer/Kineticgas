@@ -474,9 +474,46 @@ double KineticGas::mie_potential_derivative(int ij, double r, double theta){
 
 #pragma region // Helper funcions for computing dimentionless collision integrals
 
-
 double KineticGas::theta(int ij, double T, double r_prime, double g, double b){
+    double lower_limit = r_prime;
+    double upper_limit = lower_limit;
+    double theta_0 = theta_integrand(ij, T, lower_limit, g, b);
+    constexpr int N_gridpoints = 100;
+    do{
+        upper_limit += lower_limit;
+    } while (theta_integrand(ij, T, upper_limit, g, b) > 1e-3 * theta_0);
 
+    std::vector<double> r_grid(N_gridpoints);
+    double dr = (upper_limit - lower_limit) / N_gridpoints;
+    // Making a logarithmic grid
+    // List is inverted when going from lin to log (so that numbers are more closely spaced at the start)
+    // Therefore: Count "backwards" to invert the list again so that the smallest r is at r_grid[0]
+    for (int i = 0; i < N_gridpoints; i++){
+        double r = upper_limit - dr * i; // Counting backwards
+        r_grid[i] = (log(r) - log(upper_limit)) * ((lower_limit - upper_limit) / (log(upper_limit) - log(lower_limit))) + lower_limit;
+    }
+    // Trapezoid rule (piecewise linear interpolation) integration
+    double integral = 0;
+    double integrand1;
+    double integrand2;
+    double a, b; // Coefficients for y = ax + b, that interpolates the integrand in points (r1, r2)
+    double r1 = r_grid[0];
+    double r2 = r_grid[1];
+    integrand1 = theta_integrand(ij, T, r1, g, b);
+    integrand2 = theta_integrand(ij, T, r2, g, b);
+    a = (integrand2 - integrand1) / (r2 - r1);
+    b = integrand1 - a * r1;
+    integral += a * (pow(r2, 2) - pow(r1, 2)) / 2 + b * (r2 - r1) ; 
+    for (int i = 2; i < N_gridpoints; i++){
+        r1 = r_grid[i - 1];
+        r2 = r_grid[i];
+        integrand1 = integrand2;
+        integrand2 = theta_integrand(ij, T, r2, g, b);
+        a = (integrand2 - integrand1) / (r2 - r1);
+        b = integrand1 - a * r1;
+        integral += a * (pow(r2, 2) - pow(r1, 2)) / 2 + b * (r2 - r1);
+    }
+    return integral;
 }
 
 double KineticGas::theta_integrand(int ij, double T, double r, double g, double b){
@@ -493,21 +530,23 @@ double KineticGas::get_R_rootfunc_derivative(int ij, double T, double g, double 
 }
 
 double KineticGas::get_R(int ij, double T, double g, double b){
+    // Newtons method
     double delta{100.0};
     double tol = 1e-12;
     double r = b;
     double next_r;
     do{
-        next_r = r - get_R_rootfunc_derivative(ij, T, g, b, r) / get_R_rootfunc(ij, T, g, b, r);
+        next_r = r - get_R_rootfunc(ij, T, g, b, r) / get_R_rootfunc_derivative(ij, T, g, b, r);
         delta = abs(r - next_r);
         r = next_r;
     }
     while (delta > tol);
-    return r;
+    return r * (1 + 1e-5);
 }
 
-double KineticGas::chi(double g, double b){
-    throw "Chi-function is not implemented!";
+double KineticGas::chi(int ij, double T, double g, double b){
+    double R = get_R(ij, T, g, b);
+    return PI - 2 * theta(ij, T, R, g, b);
 }
 #pragma endregion
 
