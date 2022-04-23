@@ -226,7 +226,7 @@ class KineticGas:
         l = np.array(lambdas)
         return 3 + np.sqrt((l - 3) * np.vstack(l - 3))
 
-def test():
+def test(plot=False, do_print=False):
     comps = 'AR,HE'
     kingas = KineticGas(comps, BH=False)
 
@@ -256,4 +256,13 @@ def test():
     if abs(thermal_cond - kingas.thermal_conductivity(T, Vm, x)) > FLT_EPS:
         return 4
 
+    if do_print is True:
+        print('\n\nMixture is :', comps)
+        print('T =', T, 'K')
+        print('rho =', 1e-3 / Vm, 'kmol/m3')
+        print('x =', x)
+        print()
+        print('D12 =', D12, 'mol / m s')
+        print('k =', thermal_cond, 'W / m K')
+        print('S_T =', 1e3 * alpha_T0 / T, 'mK^{-1}')
     return 0

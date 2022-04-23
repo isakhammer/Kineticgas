@@ -1,7 +1,8 @@
 import sys
 
-mode = sys.argv[1]
-if mode == '-test':
+args = sys.argv[1]
+print(sys.argv)
+if '-test' in args:
     print('Testing from', __file__)
     try:
         import pyctp
@@ -15,4 +16,10 @@ if mode == '-test':
         print('Python test was successful!')
     else:
         print('Python test failed with exit code :', a)
+    
+    if '-print' in args:
+        pykg.test(do_print=True)
+    if '-plot' in args:
+        pykg.test(plot=True)
+
     exit(a)
