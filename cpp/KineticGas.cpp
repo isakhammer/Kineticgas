@@ -496,22 +496,22 @@ double KineticGas::theta(int ij, double T, double r_prime, double g, double b){
     double integral = 0;
     double integrand1;
     double integrand2;
-    double a, b; // Coefficients for y = ax + b, that interpolates the integrand in points (r1, r2)
+    double A_coeff, B_coeff; // Coefficients for y = Ax + B, that interpolates the integrand in points (r1, r2)
     double r1 = r_grid[0];
     double r2 = r_grid[1];
     integrand1 = theta_integrand(ij, T, r1, g, b);
     integrand2 = theta_integrand(ij, T, r2, g, b);
-    a = (integrand2 - integrand1) / (r2 - r1);
-    b = integrand1 - a * r1;
-    integral += a * (pow(r2, 2) - pow(r1, 2)) / 2 + b * (r2 - r1) ; 
+    A_coeff = (integrand2 - integrand1) / (r2 - r1);
+    B_coeff = integrand1 - A_coeff * r1;
+    integral += A_coeff * (pow(r2, 2) - pow(r1, 2)) / 2 + B_coeff * (r2 - r1) ; 
     for (int i = 2; i < N_gridpoints; i++){
         r1 = r_grid[i - 1];
         r2 = r_grid[i];
         integrand1 = integrand2;
         integrand2 = theta_integrand(ij, T, r2, g, b);
-        a = (integrand2 - integrand1) / (r2 - r1);
-        b = integrand1 - a * r1;
-        integral += a * (pow(r2, 2) - pow(r1, 2)) / 2 + b * (r2 - r1);
+        A_coeff = (integrand2 - integrand1) / (r2 - r1);
+        B_coeff = integrand1 - A_coeff * r1;
+        integral += A_coeff * (pow(r2, 2) - pow(r1, 2)) / 2 + B_coeff * (r2 - r1);
     }
     return integral;
 }
@@ -585,7 +585,11 @@ PYBIND11_MODULE(KineticGas, handle){
         .def("A_trippleprime", &KineticGas::A_trippleprime)
         .def("H_ij", &KineticGas::H_ij)
         .def("H_i", &KineticGas::H_i)
-        .def("H_simple", &KineticGas::H_simple);
+        .def("H_simple", &KineticGas::H_simple)
+        
+        .def("theta", &KineticGas::theta)
+        .def("chi", &KineticGas::chi)
+        .def("get_R", &KineticGas::get_R);
 }
 
 #pragma endregion
