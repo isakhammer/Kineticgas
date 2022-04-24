@@ -64,7 +64,6 @@ std::vector<double> logspace(const double& lmin, const double& lmax, const int& 
     double B = lmin - A * log(lmax);
     for (int i = 0; i < N_gridpoints; i++){
         double x = log(lmax - dx * i); // Counting backwards linearly, mapping linear grid to logspace
-        pprintf(x);
         grid[i] = A * x + B; // Using linear map from log
     }
     return grid;
