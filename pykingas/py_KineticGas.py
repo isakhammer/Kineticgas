@@ -12,7 +12,8 @@ def check_valid_composition(x):
     if abs(sum(x) - 1) > FLT_EPS:
         warnings.warn('Mole fractions do not sum to unity, sum(x) = '+str(sum(x)))
 
-potential_mode_map = {'HS' : 0, 'Mie' : 1} # Map string identifiers to corresponding int indentifiers used on cpp-side
+potential_mode_map = {'hs' : 0, 'mie' : 1} # Map string identifiers to corresponding int indentifiers used on cpp-side
+
 class KineticGas:
 
     default_N = 4
@@ -46,7 +47,7 @@ class KineticGas:
             raise IndexError('Current implementation is only binary-compatible!')
 
         self.BH = BH
-        self.potential_mode = potential_mode
+        self.potential_mode = potential_mode.lower()
         self.computed_d_points = {} # dict of state points in which (d_1, d0, d1) have already been computed
         self.computed_a_points = {}  # dict of state points in which (a_1, a1) have already been computed
 
