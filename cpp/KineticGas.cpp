@@ -441,11 +441,11 @@ double KineticGas::w_spherical_potential(int ij, int l, int r){
 #pragma region // Various intermolecular potentials
 
 double KineticGas::potential(int ij, double r, double theta){
-    std::invoke(potential_p, this, ij, r, theta);
+    return std::invoke(potential_p, this, ij, r, theta);
 }
 
 double KineticGas::potential_derivative_r(int ij, double r, double theta){
-    std::invoke(p_potential_derivative_r, this, ij, r, theta);
+    return std::invoke(p_potential_derivative_r, this, ij, r, theta);
 }
 
 double KineticGas::HS_potential(int ij, double r, double theta){
@@ -589,7 +589,10 @@ PYBIND11_MODULE(KineticGas, handle){
         
         .def("theta", &KineticGas::theta)
         .def("chi", &KineticGas::chi)
-        .def("get_R", &KineticGas::get_R);
+        .def("get_R", &KineticGas::get_R)
+        .def("potential", &KineticGas::potential)
+        .def("potential_derivative_r", &KineticGas::potential_derivative_r)
+        .def("omega", &KineticGas::omega);
 }
 
 #pragma endregion

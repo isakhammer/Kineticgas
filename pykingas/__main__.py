@@ -1,7 +1,6 @@
 import sys
 
 args = sys.argv[1]
-print(sys.argv)
 if '-test' in args:
     print('Testing from', __file__)
     try:
