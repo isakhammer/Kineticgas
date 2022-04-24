@@ -497,7 +497,7 @@ double KineticGas::theta(int ij, double T, double r_prime, double g, double b){
     double lower_limit = r_prime;
     double upper_limit = lower_limit;
     double theta_0 = theta_integrand(ij, T, lower_limit, g, b);
-    constexpr int N_gridpoints = 100;
+    constexpr int N_gridpoints = 500;
     do{
         upper_limit += lower_limit;
     } while (theta_integrand(ij, T, upper_limit, g, b) > 1e-3 * theta_0);
