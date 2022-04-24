@@ -467,7 +467,7 @@ double KineticGas::mie_potential(int ij, double r, double theta){
 }
 
 double KineticGas::mie_potential_derivative(int ij, double r, double theta){
-    return C_map[ij] * eps_map[ij] * ((- lr_map[ij] * pow(sigma_map[ij], lr_map[ij]) / pow(r, lr_map[ij] - 1)) + la_map[ij] * pow(sigma_map[ij], la_map[ij]) / pow(r, la_map[ij] - 1) );
+    return C_map[ij] * eps_map[ij] * ((- lr_map[ij] * pow(sigma_map[ij], lr_map[ij]) / pow(r, lr_map[ij] + 1)) + la_map[ij] * pow(sigma_map[ij], la_map[ij]) / pow(r, la_map[ij] + 1) );
 }
 
 #pragma endregion
@@ -531,17 +531,21 @@ double KineticGas::get_R_rootfunc_derivative(int ij, double T, double g, double 
 
 double KineticGas::get_R(int ij, double T, double g, double b){
     // Newtons method
-    double delta{100.0};
-    double tol = 1e-12;
-    double r = b;
-    double next_r;
-    do{
+    double tol = 1e-5; // Relative to sigma_map[ij]
+    double init_guess_factor = 1.0;
+    double r = init_guess_factor * b;
+    double next_r = r - get_R_rootfunc(ij, T, g, b, r) / get_R_rootfunc_derivative(ij, T, g, b, r);
+    while (abs((r - next_r) / sigma_map[ij]) > tol){
+        if (next_r > 0){
+            r = next_r;
+        }
+        else{
+            init_guess_factor *= 0.95;
+            r = init_guess_factor * b;
+        }
         next_r = r - get_R_rootfunc(ij, T, g, b, r) / get_R_rootfunc_derivative(ij, T, g, b, r);
-        delta = abs(r - next_r);
-        r = next_r;
     }
-    while (delta > tol);
-    return r * (1 + 1e-5);
+    return next_r * (1 + 1e-5);
 }
 
 double KineticGas::chi(int ij, double T, double g, double b){
@@ -592,7 +596,13 @@ PYBIND11_MODULE(KineticGas, handle){
         .def("get_R", &KineticGas::get_R)
         .def("potential", &KineticGas::potential)
         .def("potential_derivative_r", &KineticGas::potential_derivative_r)
-        .def("omega", &KineticGas::omega);
+        .def("omega", &KineticGas::omega)
+
+        .def("get_R_rootfunc", &KineticGas::get_R_rootfunc)
+        .def("get_R_rootfunc_derivative", &KineticGas::get_R_rootfunc_derivative)
+
+        .def("theta", &KineticGas::theta)
+        .def("theta_integrand", &KineticGas::theta_integrand);
 }
 
 #pragma endregion
