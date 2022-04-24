@@ -50,6 +50,26 @@ int delta(int i, int j){ // Kronecker delta
     return 0;
 }
 
+std::vector<double> logspace(const double& lmin, const double& lmax, const int& N_gridpoints){
+    std::vector<double> grid(N_gridpoints);
+    double dx = (lmax - lmin) / N_gridpoints;
+    // Making a logarithmic grid
+    // List is inverted when going from lin to log (so that numbers are more closely spaced at the start)
+    // Therefore: Count "backwards" to invert the list again so that the smallest r is at r_grid[0]
+
+    // Take a linear grid on (a, b), take log(grid) to get logarithmically spaced grid on (log(a), log(b))
+    // Make a linear map from (log(a), log(b)) to (b, a). Because spacing is bigger at the start of the log-grid
+    // Map the points on (log(a), log(b)) to (b, a), count backwards such that smaller numbers come first in the returned list
+    double A = (lmin - lmax) / log(lmax / lmin);
+    double B = lmin - A * log(lmax);
+    for (int i = 0; i < N_gridpoints; i++){
+        double x = log(lmax - dx * i); // Counting backwards linearly, mapping linear grid to logspace
+        pprintf(x);
+        grid[i] = A * x + B; // Using linear map from log
+    }
+    return grid;
+}
+
 #pragma endregion
 
 #pragma region // Tests
@@ -483,15 +503,7 @@ double KineticGas::theta(int ij, double T, double r_prime, double g, double b){
         upper_limit += lower_limit;
     } while (theta_integrand(ij, T, upper_limit, g, b) > 1e-3 * theta_0);
 
-    std::vector<double> r_grid(N_gridpoints);
-    double dr = (upper_limit - lower_limit) / N_gridpoints;
-    // Making a logarithmic grid
-    // List is inverted when going from lin to log (so that numbers are more closely spaced at the start)
-    // Therefore: Count "backwards" to invert the list again so that the smallest r is at r_grid[0]
-    for (int i = 0; i < N_gridpoints; i++){
-        double r = upper_limit - dr * i; // Counting backwards
-        r_grid[i] = (log(r) - log(upper_limit)) * ((lower_limit - upper_limit) / (log(upper_limit) - log(lower_limit))) + lower_limit;
-    }
+    std::vector<double> r_grid = logspace(lower_limit, upper_limit, N_gridpoints);
     // Trapezoid rule (piecewise linear interpolation) integration
     double integral = 0;
     double integrand1;
@@ -559,6 +571,7 @@ PYBIND11_MODULE(KineticGas, handle){
     handle.doc() = "Is this documentation? This is documentation.";
     handle.def("cpp_tests", &cpp_tests);
     handle.def("ipow", &ipow);
+    handle.def("logspace", &logspace);
     
     py::class_<Product>(handle, "Product")
         .def(py::init<int>())
