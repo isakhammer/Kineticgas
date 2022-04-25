@@ -52,7 +52,7 @@ int delta(int i, int j){ // Kronecker delta
 
 std::vector<double> logspace(const double& lmin, const double& lmax, const int& N_gridpoints){
     std::vector<double> grid(N_gridpoints);
-    double dx = (lmax - lmin) / N_gridpoints;
+    double dx = (lmax - lmin) / (N_gridpoints - 1);
     // Making a logarithmic grid
     // List is inverted when going from lin to log (so that numbers are more closely spaced at the start)
     // Therefore: Count "backwards" to invert the list again so that the smallest r is at r_grid[0]
@@ -69,11 +69,31 @@ std::vector<double> logspace(const double& lmin, const double& lmax, const int& 
     return grid;
 }
 
+double erfspace_func(const double& x, const double& lmin, const double& lmax, const double& a, const double& b){
+    double r = erf(a * (pow(x, b) - pow(lmin, b)) / (pow(lmax, b) - pow(lmin, b)));
+    return r;
+}
+
+std::vector<double> erfspace(const double& lmin, const double& lmax, const int& N_gridpoints, double& a, double& b){
+    std::vector<double> grid(N_gridpoints);
+    double dx = (lmax - lmin) / (N_gridpoints - 1);
+    // Making a f(x) grid where f(x) = erf(A * (x^b - lmin) / (lmax^b - lmin))
+
+    double A = (lmin - lmax) / (erfspace_func(lmax, lmin, lmax, a, b) - erfspace_func(lmin, lmin, lmax, a, b));
+    double B = lmin - A * erfspace_func(lmax, lmin, lmax, a, b);
+    for (int i = 0; i < N_gridpoints; i++){
+        double x = lmax - dx * i; // Counting backwards linearly (making linear grid)
+        double f = erfspace_func(x, lmin, lmax, a, b); // Mapping linear grid to f-space
+        grid[i] = A * f + B; // Linear map from f to lin
+    }
+    return grid;
+}
+
 #pragma endregion
 
 #pragma region // Tests
 int cpp_tests(){
-    std::printf("We runnin!");
+    std::printf("We runnin tests!");
     int r{0};
     r = factorial_tests();
     if (!r) r = kingas_tests();
@@ -497,12 +517,23 @@ double KineticGas::theta(int ij, double T, double r_prime, double g, double b){
     double lower_limit = r_prime;
     double upper_limit = lower_limit;
     double theta_0 = theta_integrand(ij, T, lower_limit, g, b);
-    constexpr int N_gridpoints = 500;
+    constexpr int N_gridpoints = 50;
     do{
         upper_limit += lower_limit;
-    } while (theta_integrand(ij, T, upper_limit, g, b) > 1e-3 * theta_0);
+    } while (theta_integrand(ij, T, upper_limit, g, b) > 1e-6 * theta_0);
 
-    std::vector<double> r_grid = logspace(lower_limit, upper_limit, N_gridpoints);
+    double erfspace_a = 2.0;
+    double erfspace_b = 1.0;
+    std::vector<double> r_grid = erfspace(lower_limit, upper_limit, N_gridpoints, erfspace_a, erfspace_b);
+    double t0 = theta_integrand(ij, T, r_grid[0], g, b);
+    double t1 = theta_integrand(ij, T, r_grid[1], g, b);
+    while (abs(t0 - t1) / abs(t0) > 0.1){
+        erfspace_a *= 1.5;
+        erfspace_b *= 0.9;
+        r_grid = erfspace(lower_limit, upper_limit, N_gridpoints, erfspace_a, erfspace_b);
+        t0 = theta_integrand(ij, T, r_grid[0], g, b);
+        t1 = theta_integrand(ij, T, r_grid[1], g, b);
+    }
     // Trapezoid rule (piecewise linear interpolation) integration
     double integral = 0;
     double integrand1;
@@ -514,7 +545,7 @@ double KineticGas::theta(int ij, double T, double r_prime, double g, double b){
     integrand2 = theta_integrand(ij, T, r2, g, b);
     A_coeff = (integrand2 - integrand1) / (r2 - r1);
     B_coeff = integrand1 - A_coeff * r1;
-    integral += A_coeff * (pow(r2, 2) - pow(r1, 2)) / 2 + B_coeff * (r2 - r1) ; 
+    integral += A_coeff * (pow(r2, 2) - pow(r1, 2)) / 2 + B_coeff * (r2 - r1) ;
     for (int i = 2; i < N_gridpoints; i++){
         r1 = r_grid[i - 1];
         r2 = r_grid[i];
@@ -571,6 +602,7 @@ PYBIND11_MODULE(KineticGas, handle){
     handle.def("cpp_tests", &cpp_tests);
     handle.def("ipow", &ipow);
     handle.def("logspace", &logspace);
+    handle.def("erfspace", &erfspace);
     
     py::class_<Product>(handle, "Product")
         .def(py::init<int>())
