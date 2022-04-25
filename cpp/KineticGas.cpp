@@ -152,6 +152,11 @@ KineticGas::KineticGas(std::vector<double> init_mole_weights,
         m0{0.0},
         potential_mode{potential_mode}
     {
+
+    #ifdef DEBUG
+        std::printf("This is a Debug build!\n\n");
+    #endif
+
     for (int i = 0; i < sigmaij.size(); i++){
         sigma.push_back(sigmaij[i][i]);
         m0 += mole_weights[i];
@@ -528,8 +533,8 @@ double KineticGas::theta(int ij, double T, double r_prime, double g, double b, i
     double integral_09; // Integral at 90% completion
     double A_coeff, B_coeff; // Coefficients for y = Ax + B, that interpolates the integrand in points (r1, r2)
 
-    double erfspace_a = 2.0;
-    double erfspace_b = 1.0;
+    double erfspace_a = 4.5;
+    double erfspace_b = 0.8;
 
     do{ // Until convergence (by adjusting upper_limit_cutoff_factor)
         std::vector<double> r_grid;
@@ -539,7 +544,6 @@ double KineticGas::theta(int ij, double T, double r_prime, double g, double b, i
         }
 
         do{ // Until Error in the last integration two steps is below tolerance (By adjusting N_gridpoints)
-
             do { // Until Error in the first two integration steps is below tolerance (by adjusting erfspace_a and erfspace_b)
                 r_grid = erfspace(lower_limit, upper_limit, N_gridpoints, erfspace_a, erfspace_b);
 
@@ -588,15 +592,17 @@ double KineticGas::theta(int ij, double T, double r_prime, double g, double b, i
             integral += A_coeff * (pow(r_grid[N], 2) - pow(r_grid[N - 1], 2)) / 2 + B_coeff * (r_grid[N] - r_grid[N - 1]);
             rel_eps_N = d2tdr2 * pow(r_grid[N] - r_grid[N - 2], 3) / (48 * integral);
 
-            N_gridpoints += 50;
-            #ifdef DEBUG
-                if (rel_eps_N > rel_eps_tol){
+            if (rel_eps_N > rel_eps_tol){
+                N_gridpoints += 50;
+                #ifdef DEBUG
                     std::printf("Rel. eps in last step is : %E\n", rel_eps_N);
                     std::printf("Adjusting N to : %i\n\n", N_gridpoints);
-                }
-            #endif
+                #endif
+            }
+
 
         } while (rel_eps_N > rel_eps_tol);
+
         // Trapezoid rule (piecewise linear interpolation) integration
         integral = 0;
         double integrand1;
@@ -618,7 +624,7 @@ double KineticGas::theta(int ij, double T, double r_prime, double g, double b, i
             integral += A_coeff * (pow(r2, 2) - pow(r1, 2)) / 2 + B_coeff * (r2 - r1);
         }
         integral_09 = integral;
-        for (int i = 9 * N_gridpoints / 10; i < N_gridpoints; i++){ // Complete integral
+        for (int i = 9 * N_gridpoints / 10; i < N_gridpoints; i++){ // Finish integral
             r1 = r_grid[i - 1];
             r2 = r_grid[i];
             integrand1 = integrand2;
@@ -627,12 +633,12 @@ double KineticGas::theta(int ij, double T, double r_prime, double g, double b, i
             B_coeff = integrand1 - A_coeff * r1;
             integral += A_coeff * (pow(r2, 2) - pow(r1, 2)) / 2 + B_coeff * (r2 - r1);
         }
+
         upper_limit_cutoff_factor *= 0.1;
         #ifdef DEBUG
-            if (integral_09 < convergence_threshold * integral){
-                std::printf("Change in final 10%% is : %E\n", integral_09 / integral);
-                std::printf("Adjusting cutoff factor to : %E\n\n", upper_limit_cutoff_factor);
-            }
+            std::printf("theta = %E pi\n", integral / PI);
+            std::printf("Change in final 10%% is : %E %% of final value\n", (1 - integral_09 / integral) * 100.0);
+            std::printf("Adjusting cutoff factor to : %E\n\n", upper_limit_cutoff_factor);
         #endif
 
     } while (integral_09 < convergence_threshold * integral);
