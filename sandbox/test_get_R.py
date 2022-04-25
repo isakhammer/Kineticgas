@@ -1,7 +1,7 @@
 from pykingas import KineticGas
 import numpy as np
 import matplotlib.pyplot as plt
-
+plt.style.use('default')
 
 kin = KineticGas('AR,C1', potential_mode='mie')
 sigma = kin.sigma_ij[0, 0]

@@ -6,6 +6,7 @@ from matplotlib.cm import get_cmap
 from matplotlib.colors import Normalize
 from scipy.integrate import quad
 from scipy.special import erf
+plt.style.use('default')
 
 kin = KineticGas('AR,C1', potential_mode='mie')
 sigma = kin.sigma_ij[0, 0]
@@ -112,30 +113,23 @@ def plot_theta():
             prefac *= 1.5
             gridpoints = erfspace(R, r_max, N, prefac, expo)
 
-        #ax1.plot(linpoints[int(9 * N//10):], gridpoints[int(9 * N//10):], color=cmap(norm(N)), linestyle='', marker=markers[i], label=N)
-        #print(gridpoints[-1], gridpoints[-3])
-        #ax1.plot(gridpoints, [func(r) / np.pi for r in gridpoints], color=cmap(norm(N)), linestyle='', marker='.')
-        #ax2.plot(gridpoints[1:], [py_trapz(gridpoints, i) / np.pi for i in range(1, N)], color=cmap(norm(N)))
+        ax1.plot(gridpoints, [func(r) / np.pi for r in gridpoints], color=cmap(norm(N)), linestyle='', marker='.')
+        ax2.plot(gridpoints[1:], [py_trapz(gridpoints, i) / np.pi for i in range(1, N)], color=cmap(norm(N)))
 
-
-        t_N, t_prefac, t_expo = 210, 4.5, 0.81
-        tst_grdpoints = erfspace(R, r_max, t_N, t_prefac, t_expo )
-        # print('At N =', t_N, tst_grdpoints[-1], tst_grdpoints[-3])
-
-        t = theta(R, N)
+        t = theta(R, N) # N is automatically adjusted inside theta, that is why theta(R, 10) gives the same result as theta(R, 100)
         #print()
         #print('A, B =', prefac, expo)
         #print('r_max =', r_max)
         #print('R =', R)
         #print('theta0 =', func(R))
         #print()
-        #ax2.plot(gridpoints, [t / np.pi for _ in gridpoints], color=cmap(norm(N)), linestyle='--')
+        ax2.plot(gridpoints, [t / np.pi for _ in gridpoints], color=cmap(norm(N)), linestyle='--')
 
 
     ax2.set_xscale('log')
     ax1.set_ylabel(r'd$\theta$/d$r$ [m$^{-1}$]')
     ax2.set_ylabel(r'$\theta$ [$\pi$]')
     ax1.set_yscale('log')
-    #plt.show()
+    plt.show()
 
 plot_theta()
