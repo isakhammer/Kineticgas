@@ -1,5 +1,6 @@
 .idea/
 cpp/release/
+cpp/debug/
 python/venv
 venv/
 *.so
