@@ -5,6 +5,7 @@ from matplotlib.colors import Normalize
 from matplotlib.cm import get_cmap
 from scipy.constants import Boltzmann, Avogadro
 import warnings
+plt.style.use('default')
 
 def xy_to_rt(x, y):
     r = np.sqrt(x**2 + y**2)
@@ -170,43 +171,16 @@ def get_force_grid(rmin=0.8,
     norm = Normalize(vmin=-F_max, vmax=F_max)
 
     if ax is None:
-        plt.imshow(F_grid, cmap='bwr', norm=norm, extent=[x_list[0]/sigma, x_list[-1]/sigma, y_list[0]/sigma, y_list[-1]/sigma])
-        plt.show()
+        return F_grid
     else:
         ax.imshow(F_grid, cmap='bwr', norm=norm, extent=[x_list[0]/sigma, x_list[-1]/sigma, y_list[0]/sigma, y_list[-1]/sigma])
 
-<<<<<<< Updated upstream
 
-kin = KineticGas('AR,C1', potential_mode='mie')
-sigma = kin.sigma_ij[0, 0]
-T, g0, b = 300, 2, 0.8
-fig, ax = plt.subplots(1, 1)
-
-get_force_grid(ax=ax, N=100)
-
-x, y, g, _ = get_path(T, g0, b)
-g_cmap = get_cmap('plasma')
-g_norm = Normalize(vmin=min(g), vmax=max(g))
-
-chi = kin.cpp_kingas.chi(1, T, g0, b * sigma)
-x_chi, y_chi = get_path_from_chi(chi)
-ax.plot(x_chi, y_chi, color='black', linestyle='--')
-
-print('Minimum distance (numeric):', min(np.sqrt(x**2 + y**2)))
-print('Minimum distance (kingas):', kin.cpp_kingas.get_R(1, T, g0, b * sigma) / sigma)
-print()
-print('Chi (numeric) :', round(get_chi_from_path(x, y) / np.pi, 2), 'pi')
-print('Chi (kingas)  :', round(kin.cpp_kingas.chi(1, T, g0, b * sigma) / np.pi, 2), 'pi')
-
-for i in range(1, len(g)):
-    ax.plot(x[i - 1:i + 1], y[i - 1:i + 1], color=g_cmap(g_norm(g[i])))
-plt.show()
-=======
 if __name__ == '__main__':
     kin = KineticGas('AR,C1', potential='mie')
     sigma = kin.sigma_ij[0, 0]
     T, g0, b = 300, 2, 0.8
-    g0_list = [0.01, 2.5, 5]
+    g0_list = [1, 2.5, 5]
     b_list = [0.5, 1, 1.5]
     fig, axs = plt.subplots(1, 3, sharey='all')
 
@@ -247,6 +221,5 @@ if __name__ == '__main__':
         ax.set_xlim(0, xrange)
         ax.set_ylim(-yrange, yrange)
     plt.show()
->>>>>>> Stashed changes
 
 

@@ -6,6 +6,7 @@ from matplotlib.cm import get_cmap
 from matplotlib.colors import Normalize
 from scipy.integrate import quad
 from scipy.special import erf
+plt.style.use('default')
 
 kin = KineticGas('AR,C1', potential='mie')
 sigma = kin.sigma_ij[0, 0]
@@ -14,7 +15,7 @@ T, g, b = 300, 2, 0.8 * sigma
 
 func = lambda r: kin.cpp_kingas.theta_integrand(1, T, r, g, b)
 integral = lambda R_min, r: quad(func, R_min, r)[0]
-theta = lambda R_min: kin.cpp_kingas.theta(1, T, R_min, g, b)
+theta = lambda R_min, N: kin.cpp_kingas.theta(1, T, R_min, g, b, N)
 
 R = kin.cpp_kingas.get_R(1, T, g, b)
 r_max = R
@@ -94,16 +95,18 @@ def plot_erfspace():
 
 
 def plot_theta():
-    N_list = [10, 50, 100]
+    N_list = [10, 50, 100, 200]
+    markers = ['o', '.', 'x', '+', 'v', '^']
     fig, axs = plt.subplots(2, 1, sharex='all')
     ax1, ax2 = axs
     cmap = get_cmap('cool')
     norm = Normalize(vmin=min(N_list), vmax=max(N_list))
 
-    for N in N_list:
+    for i, N in enumerate(N_list):
         print('N =', N)
         expo = 1
         prefac = 2
+        linpoints = np.linspace(R, r_max, N, endpoint=True)
         gridpoints = erfspace(R, r_max, N, prefac, expo)
         while abs(func(gridpoints[0]) - abs(func(gridpoints[1]))) / func(gridpoints[0]) > 0.1:
             expo *= 0.9
@@ -113,13 +116,13 @@ def plot_theta():
         ax1.plot(gridpoints, [func(r) / np.pi for r in gridpoints], color=cmap(norm(N)), linestyle='', marker='.')
         ax2.plot(gridpoints[1:], [py_trapz(gridpoints, i) / np.pi for i in range(1, N)], color=cmap(norm(N)))
 
-        t = theta(R)
-        print()
-        print('A, B =', prefac, expo)
-        print('r_max =', r_max)
-        print('R =', R)
-        print('theta0 =', func(R))
-        print()
+        t = theta(R, N) # N is automatically adjusted inside theta, that is why theta(R, 10) gives the same result as theta(R, 100)
+        #print()
+        #print('A, B =', prefac, expo)
+        #print('r_max =', r_max)
+        #print('R =', R)
+        #print('theta0 =', func(R))
+        #print()
         ax2.plot(gridpoints, [t / np.pi for _ in gridpoints], color=cmap(norm(N)), linestyle='--')
 
 
