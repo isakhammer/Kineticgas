@@ -22,7 +22,7 @@ class KineticGas:
                  mole_weights=None, sigma=None, eps_div_k=None,
                  la=None, lr=None, lij=0, kij=0,
                  BH=False, hs_mixing_rule='additive',
-                 potential_mode='HS'):
+                 potential='HS'):
         '''
         :param comps (str): Comma-separated list of components, following Thermopack-convention
         :param BH (bool) : Use Barker-Henderson diameters?
