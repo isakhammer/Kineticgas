@@ -61,7 +61,7 @@ class KineticGas{
 
     // Helper functions for computing dimentionless collision integrals
     double mie_potential_derivative(int& ij, double& r);
-    double theta(int ij, double T, double r_prime, double g, double b);
+    double theta(int ij, double T, double r_prime, double g, double b, int& N_gridpoints);
     double theta_integrand(int ij, double T, double r, double g, double b);
     double get_R(int ij, double T, double g, double b);
     double get_R_rootfunc(int ij, double T, double g, double b, double& r);
