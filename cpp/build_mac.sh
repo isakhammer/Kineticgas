@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -e
 cd cpp/release
-if [ $1 -e "-cleancache" ]; then
+if [ $1 -e "-cleancache" ] || [ $2 -e "-cleancache"]; then
     echo $1
     echo "Cleaning!"
     rm -rf CMakeCache.txt
 fi
-if [ $1 -e "-fullclean" ]; then
+if [ $1 -e "-fullclean" ] || [ $2 -e "-fullclean"]; then
     echo $1
     echo "Wiping!"
     cd ..
@@ -14,7 +14,12 @@ if [ $1 -e "-fullclean" ]; then
     mkdir release
     cd release
 fi
-cmake -DCMAKE_BUILD_TYPE=Release  ..
+if [ $1 -e "-Debug" ]; then
+    cmake -DCMAKE_BUILD_TYPE=Debug
+else
+    cmake -DCMAKE_BUILD_TYPE=Release  ..
+fi
+
 make
 cd ../..
 
