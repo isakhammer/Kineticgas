@@ -178,7 +178,7 @@ def get_force_grid(rmin=0.8,
 
 kin = KineticGas('AR,C1', potential_mode='mie')
 sigma = kin.sigma_ij[0, 0]
-T, g0, b = 300, 1, 0.3
+T, g0, b = 300, 2, 0.8
 fig, ax = plt.subplots(1, 1)
 
 get_force_grid(ax=ax, N=100)
