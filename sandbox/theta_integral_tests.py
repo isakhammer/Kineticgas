@@ -14,7 +14,7 @@ T, g, b = 300, 2, 0.8 * sigma
 
 func = lambda r: kin.cpp_kingas.theta_integrand(1, T, r, g, b)
 integral = lambda R_min, r: quad(func, R_min, r)[0]
-theta = lambda R_min: kin.cpp_kingas.theta(1, T, R_min, g, b)
+theta = lambda R_min, N: kin.cpp_kingas.theta(1, T, R_min, g, b, N)
 
 R = kin.cpp_kingas.get_R(1, T, g, b)
 r_max = R
@@ -94,39 +94,48 @@ def plot_erfspace():
 
 
 def plot_theta():
-    N_list = [10, 50, 100]
+    N_list = [10, 50, 100, 200]
+    markers = ['o', '.', 'x', '+', 'v', '^']
     fig, axs = plt.subplots(2, 1, sharex='all')
     ax1, ax2 = axs
     cmap = get_cmap('cool')
     norm = Normalize(vmin=min(N_list), vmax=max(N_list))
 
-    for N in N_list:
+    for i, N in enumerate(N_list):
         print('N =', N)
         expo = 1
         prefac = 2
+        linpoints = np.linspace(R, r_max, N, endpoint=True)
         gridpoints = erfspace(R, r_max, N, prefac, expo)
         while abs(func(gridpoints[0]) - abs(func(gridpoints[1]))) / func(gridpoints[0]) > 0.1:
             expo *= 0.9
             prefac *= 1.5
             gridpoints = erfspace(R, r_max, N, prefac, expo)
 
-        ax1.plot(gridpoints, [func(r) / np.pi for r in gridpoints], color=cmap(norm(N)), linestyle='', marker='.')
-        ax2.plot(gridpoints[1:], [py_trapz(gridpoints, i) / np.pi for i in range(1, N)], color=cmap(norm(N)))
+        #ax1.plot(linpoints[int(9 * N//10):], gridpoints[int(9 * N//10):], color=cmap(norm(N)), linestyle='', marker=markers[i], label=N)
+        #print(gridpoints[-1], gridpoints[-3])
+        #ax1.plot(gridpoints, [func(r) / np.pi for r in gridpoints], color=cmap(norm(N)), linestyle='', marker='.')
+        #ax2.plot(gridpoints[1:], [py_trapz(gridpoints, i) / np.pi for i in range(1, N)], color=cmap(norm(N)))
 
-        t = theta(R)
-        print()
-        print('A, B =', prefac, expo)
-        print('r_max =', r_max)
-        print('R =', R)
-        print('theta0 =', func(R))
-        print()
-        ax2.plot(gridpoints, [t / np.pi for _ in gridpoints], color=cmap(norm(N)), linestyle='--')
+
+        t_N, t_prefac, t_expo = 210, 4.5, 0.81
+        tst_grdpoints = erfspace(R, r_max, t_N, t_prefac, t_expo )
+        # print('At N =', t_N, tst_grdpoints[-1], tst_grdpoints[-3])
+
+        t = theta(R, N)
+        #print()
+        #print('A, B =', prefac, expo)
+        #print('r_max =', r_max)
+        #print('R =', R)
+        #print('theta0 =', func(R))
+        #print()
+        #ax2.plot(gridpoints, [t / np.pi for _ in gridpoints], color=cmap(norm(N)), linestyle='--')
 
 
     ax2.set_xscale('log')
     ax1.set_ylabel(r'd$\theta$/d$r$ [m$^{-1}$]')
     ax2.set_ylabel(r'$\theta$ [$\pi$]')
     ax1.set_yscale('log')
-    plt.show()
+    #plt.show()
 
 plot_theta()

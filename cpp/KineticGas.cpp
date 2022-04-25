@@ -521,46 +521,52 @@ double KineticGas::theta(int ij, double T, double r_prime, double g, double b, i
 
     double rel_eps_tol = 0.05; // Error tolerance
     double convergence_threshold = 0.99; // Integral after 90% of steps must be >= convergence_threshold * integral at 100% of steps
+    double rel_eps_0;
+    double rel_eps_N;
 
     double integral = 0;
+    double integral_09; // Integral at 90% completion
     double A_coeff, B_coeff; // Coefficients for y = Ax + B, that interpolates the integrand in points (r1, r2)
 
+    double erfspace_a = 2.0;
+    double erfspace_b = 1.0;
+
     do{ // Until convergence (by adjusting upper_limit_cutoff_factor)
+        std::vector<double> r_grid;
+
         while (theta_integrand(ij, T, upper_limit, g, b) > upper_limit_cutoff_factor * theta_0){
-            upper_limit += (1e-5 / upper_limit_cutoff_factor) * lower_limit; // Make iteration go faster if upper limit cutoff factor has been reduced
+            upper_limit += lower_limit; // Make iteration go faster if upper limit cutoff factor has been reduced
         }
 
         do{ // Until Error in the last integration two steps is below tolerance (By adjusting N_gridpoints)
-            double erfspace_a = 2.0;
-            double erfspace_b = 1.0;
-            std::vector<double> r_grid;
 
             do { // Until Error in the first two integration steps is below tolerance (by adjusting erfspace_a and erfspace_b)
-                integral = 0;
                 r_grid = erfspace(lower_limit, upper_limit, N_gridpoints, erfspace_a, erfspace_b);
 
                 double t_1 = theta_integrand(ij, T, r_grid[0], g, b);
                 double t0 = theta_integrand(ij, T, r_grid[1], g, b);
                 double t1 = theta_integrand(ij, T, r_grid[2], g, b);
                 double h1 = r_grid[2] - r_grid[1];
-                double h2 = r_grid[1] - r_grid[0]
+                double h2 = r_grid[1] - r_grid[0];
                 double d2tdr2 = 2 * (t1 + (h1 / h2) * t_1 - (h1 / h2 + 1) * t0) / (pow(h1, 2) + h1 * h2);
 
+                integral = 0;
                 A_coeff = (t0 - t_1) / (r_grid[1] - r_grid[0]);
                 B_coeff = t_1 - A_coeff * r_grid[0];
-                integral += A_coeff * (pow(r2, 2) - pow(r1, 2)) / 2 + B_coeff * (r2 - r1);
+                integral += A_coeff * (pow(r_grid[1], 2) - pow(r_grid[0], 2)) / 2 + B_coeff * (r_grid[1] - r_grid[0]);
                 A_coeff = (t1 - t0) / (r_grid[2] - r_grid[1]);
                 B_coeff = t0 - A_coeff * r_grid[1];
-                integral += A_coeff * (pow(r2, 2) - pow(r1, 2)) / 2 + B_coeff * (r2 - r1);
+                integral += A_coeff * (pow(r_grid[2], 2) - pow(r_grid[1], 2)) / 2 + B_coeff * (r_grid[2] - r_grid[1]);
 
-                double rel_eps_0 = d2tdr2 * (r_grid[2] - r_grid[0]) / (48 * integral);
-
-                erfspace_a *= 1.5;
-                erfspace_b *= 0.9;
+                rel_eps_0 = d2tdr2 * pow(r_grid[2] - r_grid[0], 3) / (48 * integral);
 
                 if (rel_eps_0 > rel_eps_tol){
-                    std::printf("Rel. eps in first step is : %E\n", rel_eps_0);
-                    std::printf("Adjusting A, B to : %E, %E\n\n", erfspace_a, erfspace_b);
+                    erfspace_a *= 1.5;
+                    erfspace_b *= 0.9;
+                    #ifdef DEBUG
+                        std::printf("Rel. eps in first step is : %E\n", rel_eps_0);
+                        std::printf("Adjusting A, B to : %E, %E\n\n", erfspace_a, erfspace_b);
+                    #endif
                 }
 
             } while (rel_eps_0 > rel_eps_tol);
@@ -570,28 +576,29 @@ double KineticGas::theta(int ij, double T, double r_prime, double g, double b, i
             double tN_1 = theta_integrand(ij, T, r_grid[N - 1], g, b);
             double tN = theta_integrand(ij, T, r_grid[N], g, b);
             double h1 = r_grid[N] - r_grid[N - 1];
-            double h2 = r_grid[N - 1] - r_grid[N - 2]
-            double d2tdr2 = 2 * (t1 + (h1 / h2) * t_1 - (h1 / h2 + 1) * t0) / (pow(h1, 2) + h1 * h2);
+            double h2 = r_grid[N - 1] - r_grid[N - 2];
+            double d2tdr2 = 2 * (tN + (h1 / h2) * tN_2 - (h1 / h2 + 1) * tN_1) / (pow(h1, 2) + h1 * h2);
 
-            integral = 0
-            A_coeff = (t0 - t_1) / (r_grid[1] - r_grid[0]);
-            B_coeff = t_1 - A_coeff * r_grid[0];
-            integral += A_coeff * (pow(r2, 2) - pow(r1, 2)) / 2 + B_coeff * (r2 - r1);
-            A_coeff = (t1 - t0) / (r_grid[2] - r_grid[1]);
-            B_coeff = t0 - A_coeff * r_grid[1];
-            integral += A_coeff * (pow(r2, 2) - pow(r1, 2)) / 2 + B_coeff * (r2 - r1);
-            double rel_eps_N = d2tdr2 * (r_grid[N] - r_grid[N - 2]) / (48 * integral);
+            integral = 0;
+            A_coeff = (tN_1 - tN_2) / (r_grid[N - 1] - r_grid[N - 2]);
+            B_coeff = tN_2 - A_coeff * r_grid[N - 2];
+            integral += A_coeff * (pow(r_grid[N - 1], 2) - pow(r_grid[N - 2], 2)) / 2 + B_coeff * (r_grid[N - 1] - r_grid[N - 2]);
+            A_coeff = (tN - tN_1) / (r_grid[N] - r_grid[N - 1]);
+            B_coeff = tN_1 - A_coeff * r_grid[N - 1];
+            integral += A_coeff * (pow(r_grid[N], 2) - pow(r_grid[N - 1], 2)) / 2 + B_coeff * (r_grid[N] - r_grid[N - 1]);
+            rel_eps_N = d2tdr2 * pow(r_grid[N] - r_grid[N - 2], 3) / (48 * integral);
 
             N_gridpoints += 50;
-            if (rel_eps_N > rel_eps_tol){
-                std::printf("Rel. eps in last step is : %E\n", rel_eps_N);
-                std::printf("Adjusting N to : %i\n", N_gridpoints);
-            }
+            #ifdef DEBUG
+                if (rel_eps_N > rel_eps_tol){
+                    std::printf("Rel. eps in last step is : %E\n", rel_eps_N);
+                    std::printf("Adjusting N to : %i\n\n", N_gridpoints);
+                }
+            #endif
 
         } while (rel_eps_N > rel_eps_tol);
         // Trapezoid rule (piecewise linear interpolation) integration
         integral = 0;
-        double integral_09; // Integral at 90% completion
         double integrand1;
         double integrand2;
         double r1 = r_grid[0];
@@ -610,7 +617,7 @@ double KineticGas::theta(int ij, double T, double r_prime, double g, double b, i
             B_coeff = integrand1 - A_coeff * r1;
             integral += A_coeff * (pow(r2, 2) - pow(r1, 2)) / 2 + B_coeff * (r2 - r1);
         }
-        integral09 = integral;
+        integral_09 = integral;
         for (int i = 9 * N_gridpoints / 10; i < N_gridpoints; i++){ // Complete integral
             r1 = r_grid[i - 1];
             r2 = r_grid[i];
@@ -621,11 +628,12 @@ double KineticGas::theta(int ij, double T, double r_prime, double g, double b, i
             integral += A_coeff * (pow(r2, 2) - pow(r1, 2)) / 2 + B_coeff * (r2 - r1);
         }
         upper_limit_cutoff_factor *= 0.1;
-
-        if (integral_09 < convergence_threshold * integral){
-            std::printf("Change in final 10% is : %E\n", integral_09 / integral);
-            std::printf("Adjusting cutoff factor to : %E\n\n", upper_limit_cutoff_factor);
-        }
+        #ifdef DEBUG
+            if (integral_09 < convergence_threshold * integral){
+                std::printf("Change in final 10%% is : %E\n", integral_09 / integral);
+                std::printf("Adjusting cutoff factor to : %E\n\n", upper_limit_cutoff_factor);
+            }
+        #endif
 
     } while (integral_09 < convergence_threshold * integral);
 
@@ -666,7 +674,8 @@ double KineticGas::get_R(int ij, double T, double g, double b){
 
 double KineticGas::chi(int ij, double T, double g, double b){
     double R = get_R(ij, T, g, b);
-    return PI - 2 * theta(ij, T, R, g, b, 50);
+    int N_gridpoints = 50;
+    return PI - 2 * theta(ij, T, R, g, b, N_gridpoints);
 }
 #pragma endregion
 
