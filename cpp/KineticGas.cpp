@@ -553,8 +553,43 @@ double KineticGas::theta(int ij, double T, double r_prime, double g, double b){
         integrand2 = theta_integrand(ij, T, r2, g, b);
         A_coeff = (integrand2 - integrand1) / (r2 - r1);
         B_coeff = integrand1 - A_coeff * r1;
-        integral += A_coeff * (pow(r2, 2) - pow(r1, 2)) / 2 + B_coeff * (r2 - r1);
-    }
+        integral += A_coeff * (pow(r2, 2) - pow(r1, 2)) / 2 + B_coeff * (r2 - r1) ;
+        for (int i = 2; i < 9 * N_gridpoints / 10; i++){ // Integrate up to 90% of integral
+            r1 = r_grid[i - 1];
+            r2 = r_grid[i];
+            integrand1 = integrand2;
+            integrand2 = theta_integrand(ij, T, r2, g, b);
+            A_coeff = (integrand2 - integrand1) / (r2 - r1);
+            B_coeff = integrand1 - A_coeff * r1;
+            integral += A_coeff * (pow(r2, 2) - pow(r1, 2)) / 2 + B_coeff * (r2 - r1);
+        }
+        integral_09 = integral;
+        for (int i = 9 * N_gridpoints / 10; i < N_gridpoints; i++){ // Finish integral
+            r1 = r_grid[i - 1];
+            r2 = r_grid[i];
+            integrand1 = integrand2;
+            integrand2 = theta_integrand(ij, T, r2, g, b);
+            A_coeff = (integrand2 - integrand1) / (r2 - r1);
+            B_coeff = integrand1 - A_coeff * r1;
+            integral += A_coeff * (pow(r2, 2) - pow(r1, 2)) / 2 + B_coeff * (r2 - r1);
+        }
+
+        upper_limit_cutoff_factor *= 0.1;
+        #ifdef DEBUG
+            if (integral_09 < convergence_threshold * integral){
+                std::printf("theta = %E pi\n", integral / PI);
+                std::printf("Change in final 10%% is : %E %% of final value\n", (1 - integral_09 / integral) * 100.0);
+                std::printf("Adjusting cutoff factor to : %E\n\n", upper_limit_cutoff_factor);
+            }
+        #endif
+
+    } while (integral_09 < convergence_threshold * integral);
+
+    #ifdef DEBUG
+        std::printf("For b = %E sigma, g = %E\n", b / sigma_map[ij], g);
+        std::printf("Computed theta = %E \n\n", integral);
+    #endif
+
     return integral;
 }
 
@@ -576,23 +611,47 @@ double KineticGas::get_R(int ij, double T, double g, double b){
     double tol = 1e-5; // Relative to sigma_map[ij]
     double init_guess_factor = 1.0;
     double r = init_guess_factor * b;
-    double next_r = r - get_R_rootfunc(ij, T, g, b, r) / get_R_rootfunc_derivative(ij, T, g, b, r);
+    double f = get_R_rootfunc(ij, T, g, b, r);
+    double dfdr = get_R_rootfunc_derivative(ij, T, g, b, r);
+    double next_r = r - f / dfdr;
     while (abs((r - next_r) / sigma_map[ij]) > tol){
-        if (next_r > 0){
-            r = next_r;
-        }
-        else{
+        if (next_r < 0){
             init_guess_factor *= 0.95;
             r = init_guess_factor * b;
+            #ifdef DEBUG
+                std::printf("Initial guess for R failed (r < 0), reducing to %E sigma\n\n", r);
+            #endif
         }
-        next_r = r - get_R_rootfunc(ij, T, g, b, r) / get_R_rootfunc_derivative(ij, T, g, b, r);
+        else if (f < 0 && f / dfdr < 0){
+            init_guess_factor *= 0.95;
+            r = init_guess_factor * b;
+            #ifdef DEBUG
+                std::printf("Initial guess for R failed (df/dr < 0 && f < 0), reducing to %E sigma\n\n", r);
+            #endif
+        }
+        else{
+            r = next_r;
+        }
+        f = get_R_rootfunc(ij, T, g, b, r);
+        dfdr = get_R_rootfunc_derivative(ij, T, g, b, r)
+        next_r = r - f / dfdr;
     }
+    #ifdef DEBUG
+        std::printf("For b = %E sigma, g = %E\n", b / sigma_map[ij], g);
+        std::printf("Found R at %E sigma\n\n", next_r / sigma_map[ij]);
+    #endif
     return next_r * (1 + 1e-5);
 }
 
 double KineticGas::chi(int ij, double T, double g, double b){
     double R = get_R(ij, T, g, b);
-    return PI - 2 * theta(ij, T, R, g, b);
+    int N_gridpoints = 50;
+    double val = PI - 2 * theta(ij, T, R, g, b, N_gridpoints);
+    #ifdef DEBUG
+        std::printf("For b = %E sigma, g = %E\n", b / sigma_map[ij], g);
+        std::printf("Computed chi = %E\n\n", val);
+    #endif
+    return val;
 }
 #pragma endregion
 

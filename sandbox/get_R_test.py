@@ -3,13 +3,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-kin = KineticGas('AR,C1', potential_mode='mie')
+kin = KineticGas('AR,C1', potential='mie')
 sigma = kin.sigma_ij[0, 0]
 
 func = lambda r: kin.cpp_kingas.get_R_rootfunc(1, T, g, b, r)
 derivative = lambda r: kin.cpp_kingas.get_R_rootfunc_derivative(1, T, g, b, r)
 
-T, g, b = 300, 0.1, 1.2 * sigma
+T, g, b = 300, 1e-5, 2.6 * sigma
 
 r_list = np.linspace(0.99 * sigma, 4 * sigma, 100)
 func_list = np.empty_like(r_list)
@@ -50,7 +50,7 @@ p1, = ax.plot(r_list / sigma, func_list, label='func')
 ax.plot(b / sigma, kin.cpp_kingas.get_R_rootfunc(1, T, g, b, b), marker='x', color='b')
 ax.plot(R / sigma, func(R), marker='v', color='g')
 ax.set_ylabel('func')
-ax.set_ylim(-50, 500)
+ax.set_ylim(-5e9, 5e9)
 #p2, = twn.plot(r_list / sigma, derivative_list, label='derivative')
 #twn.set_ylabel('derivative')
 

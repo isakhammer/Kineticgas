@@ -7,7 +7,7 @@ from matplotlib.colors import Normalize
 from scipy.integrate import quad
 from scipy.special import erf
 
-kin = KineticGas('AR,C1', potential_mode='mie')
+kin = KineticGas('AR,C1', potential='mie')
 sigma = kin.sigma_ij[0, 0]
 
 T, g, b = 300, 2, 0.8 * sigma
