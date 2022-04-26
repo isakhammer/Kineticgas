@@ -27,6 +27,9 @@ do
             python -m pykingas -test -debug
             exit 0
             ;;
+        -*)
+            echo "Bad option $1"
+            exit 1
     esac
     shift
 done
