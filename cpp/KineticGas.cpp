@@ -727,7 +727,11 @@ double KineticGas::chi(int ij, double T, double g, double b){
 
 #pragma region // Bindings
 
-PYBIND11_MODULE(KineticGas, handle){
+#ifndef DEBUG
+PYBIND11_MODULE(KineticGas_r, handle){
+#else
+PYBIND11_MODULE(KineticGas_d, handle){
+#endif
     handle.doc() = "Is this documentation? This is documentation.";
     handle.def("cpp_tests", &cpp_tests);
     handle.def("ipow", &ipow);

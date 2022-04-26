@@ -1,5 +1,4 @@
-from pykingas import KineticGas
-from pykingas.KineticGas import logspace, erfspace
+from pykingas import KineticGas, logspace, erfspace
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.cm import get_cmap
