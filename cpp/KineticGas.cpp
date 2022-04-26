@@ -693,7 +693,7 @@ double KineticGas::get_R(int ij, double T, double g, double b){
             r = next_r;
         }
         f = get_R_rootfunc(ij, T, g, b, r);
-        dfdr = get_R_rootfunc_derivative(ij, T, g, b, r)
+        dfdr = get_R_rootfunc_derivative(ij, T, g, b, r);
         next_r = r - f / dfdr;
     }
     #ifdef DEBUG
