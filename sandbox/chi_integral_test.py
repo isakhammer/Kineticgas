@@ -11,10 +11,8 @@ T = 300
 kin = KineticGas('AR,C1', potential='mie')
 sigma = kin.sigma_ij[0, 0]
 
-
-
 def plot_chi(g=None, b=None):
-    b_list = np.linspace(0, 15, 60) * sigma
+    b_list = np.linspace(0, 25, 5) * sigma
     g_list = np.linspace(1e-3, 5, 60)
 
     if g is None and b is None:
@@ -35,15 +33,19 @@ def plot_chi(g=None, b=None):
     elif b is None:
         chi_list = np.empty((len(b_list)))
         for bi, b in enumerate(b_list):
-            chi_list[bi] = kin.cpp_kingas.theta(1, T, g, b)# * (b / sigma)
+            chi_list[bi] = kin.cpp_kingas.chi(1, T, g, b)# * (b / sigma)
         plt.plot(b_list/sigma, chi_list, label=round(g,2))
         plt.plot(b_list / sigma, [chi_list[-1] for _ in b_list], linestyle='--')
+        plt.xlabel(r'$b$ [$\sigma$]')
+        plt.ylabel(r'$\chi$ [$\pi$]')
 
     elif g is None:
         chi_list = np.empty((len(g_list)))
         for gi, g in enumerate(g_list):
             chi_list[gi] = kin.cpp_kingas.chi(1, T, g, b)
         plt.plot(g_list, chi_list, label=round(g, 2))
+        plt.xlabel(r'$g$ [-]')
+        plt.ylabel(r'$\chi$ [$\pi$]')
     else:
         print('Either g or b must be None!')
 
