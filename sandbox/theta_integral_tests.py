@@ -22,7 +22,6 @@ r_max = R
 while func(r_max) > 1e-6 * func(R):
     r_max += R
 
-
 def py_logspace(lmin, lmax, N_gridpoints):
     grid = np.empty(N_gridpoints)
     dx = (lmax - lmin) / (N_gridpoints - 1)
