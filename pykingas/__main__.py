@@ -1,6 +1,12 @@
-import sys
+import sys, shutil, os
 
 args = sys.argv[1]
+
+if '-debug' in args:
+    shutil.copy(os.path.dirname(__file__)+'/../cpp/debug/KineticGas_d.so', os.path.dirname(__file__))
+else:
+    shutil.copy(os.path.dirname(__file__) + '/../cpp/release/KineticGas.so', os.path.dirname(__file__))
+
 if '-test' in args:
     print('Testing from', __file__)
     try:

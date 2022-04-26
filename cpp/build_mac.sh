@@ -23,15 +23,18 @@ do
             make
             cd ../..
             cp cpp/debug/KineticGas.cpython-39-darwin.so pykingas/KineticGas.so
-            python -m pykingas -test
+            cp cpp/debug/KineticGas.cpython-39-darwin.so cpp/debug/KineticGas.so
+            python -m pykingas -test -debug
             exit 0
             ;;
     esac
     shift
 done
 
+echo "Building Release"
 cmake -DCMAKE_BUILD_TYPE=Release  ..
 make
 cd ../..
 cp cpp/release/KineticGas.cpython-39-darwin.so pykingas/KineticGas.so
+cp cpp/release/KineticGas.cpython-39-darwin.so cpp/release/KineticGas.so
 python -m pykingas -test
