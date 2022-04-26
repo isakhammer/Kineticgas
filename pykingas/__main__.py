@@ -1,11 +1,12 @@
 import sys, shutil, os
 
-args = sys.argv[1]
-
-if '-debug' in args:
-    shutil.copy(os.path.dirname(__file__)+'/../cpp/debug/KineticGas_d.so', os.path.dirname(__file__))
-else:
-    shutil.copy(os.path.dirname(__file__) + '/../cpp/release/KineticGas.so', os.path.dirname(__file__))
+args = sys.argv
+print('__main__.py has been executed!')
+if '-debug' in args or 'debug' in args:
+    print('Retrieving debug build')
+    shutil.copy(os.path.dirname(__file__)+'/../cpp/debug/KineticGas.so', os.path.dirname(__file__)+'/KineticGas.so')
+elif '-release' in args or 'release' in args:
+    shutil.copy(os.path.dirname(__file__) + '/../cpp/release/KineticGas.so', os.path.dirname(__file__)+'/KineticGas.so')
 
 if '-test' in args:
     print('Testing from', __file__)

@@ -22,7 +22,6 @@ do
             cmake -DCMAKE_BUILD_TYPE=Debug ..
             make
             cd ../..
-            cp cpp/debug/KineticGas.cpython-39-darwin.so pykingas/KineticGas.so
             cp cpp/debug/KineticGas.cpython-39-darwin.so cpp/debug/KineticGas.so
             python -m pykingas -test -debug
             exit 0
@@ -37,4 +36,4 @@ make
 cd ../..
 cp cpp/release/KineticGas.cpython-39-darwin.so pykingas/KineticGas.so
 cp cpp/release/KineticGas.cpython-39-darwin.so cpp/release/KineticGas.so
-python -m pykingas -test
+python -m pykingas -test -release
