@@ -536,15 +536,19 @@ double KineticGas::theta(int ij, double T, double r_prime, double g, double b, i
     double erfspace_a = 4.5;
     double erfspace_b = 0.8;
 
-    do{ // Until convergence (by adjusting upper_limit_cutoff_factor)
+    do{ // Compute integral, recompute if not converged
+        // Until convergence (by adjusting upper_limit_cutoff_factor)
         std::vector<double> r_grid;
 
         while (theta_integrand(ij, T, upper_limit, g, b) > upper_limit_cutoff_factor * theta_0){
             upper_limit += lower_limit; // Make iteration go faster if upper limit cutoff factor has been reduced
         }
 
-        do{ // Until Error in the last integration two steps is below tolerance (By adjusting N_gridpoints)
-            do { // Until Error in the first two integration steps is below tolerance (by adjusting erfspace_a and erfspace_b)
+        do{ // Increase number of integration points
+            // Until Error in the last integration two steps is below tolerance (By adjusting N_gridpoints)
+
+            do { // Increase density of points at start of integral
+                 // Until Error in the first two integration steps is below tolerance (by adjusting erfspace_a and erfspace_b)
                 r_grid = erfspace(lower_limit, upper_limit, N_gridpoints, erfspace_a, erfspace_b);
 
                 double t_1 = theta_integrand(ij, T, r_grid[0], g, b);
@@ -679,21 +683,21 @@ double KineticGas::get_R(int ij, double T, double g, double b){
             init_guess_factor *= 0.95;
             r = init_guess_factor * b;
             #ifdef DEBUG
-                std::printf("Initial guess for R failed (r < 0), reducing to %E sigma\n\n", r);
+                std::printf("Initial guess for R failed (r < 0), reducing to %E sigma\n\n", r / sigma_map[ij]);
             #endif
         }
         else if (f < 0 && f / dfdr < 0){
             init_guess_factor *= 0.95;
             r = init_guess_factor * b;
             #ifdef DEBUG
-                std::printf("Initial guess for R failed (df/dr < 0 && f < 0), reducing to %E sigma\n\n", r);
+                std::printf("Initial guess for R failed (df/dr < 0 && f < 0), reducing to %E sigma\n\n", r / sigma_map[ij]);
             #endif
         }
         else{
             r = next_r;
         }
         f = get_R_rootfunc(ij, T, g, b, r);
-        dfdr = get_R_rootfunc_derivative(ij, T, g, b, r)
+        dfdr = get_R_rootfunc_derivative(ij, T, g, b, r);
         next_r = r - f / dfdr;
     }
     #ifdef DEBUG
@@ -716,6 +720,7 @@ double KineticGas::chi(int ij, double T, double g, double b){
 #pragma endregion
 
 #pragma region // Bindings
+
 PYBIND11_MODULE(KineticGas, handle){
     handle.doc() = "Is this documentation? This is documentation.";
     handle.def("cpp_tests", &cpp_tests);
