@@ -159,8 +159,10 @@ def plot_theta_av_b(b_min, b_max):
 def plot_theta_integrand_dblderiv():
     r_grid = np.array(erfspace(R, 10 * sigma, 50, 2, 1))
     integrand = np.empty_like(r_grid)
+    analytic_d2tdr2 = np.empty_like(r_grid)
     for i, r in enumerate(r_grid):
         integrand[i] = func(r)
+        analytic_d2tdr2[i] = kin.cpp_kingas.theta_integrand_dblderivative(1, T, r, g, b)
 
     d2tdr2 = np.empty(len(integrand) - 2)
     for i in range(1, len(integrand) - 1):
@@ -172,6 +174,7 @@ def plot_theta_integrand_dblderiv():
         d2tdr2[i - 1] = 2 * (t1 + (h1 / h2) * t_1 - (h1 / h2 + 1) * t0) / (np.power(h1, 2) + h1 * h2)
 
     plt.plot(r_grid[1 : -1] / sigma, d2tdr2)
+    plt.plot(r_grid / sigma, analytic_d2tdr2)
     plt.xscale('log')
     plt.yscale('log')
     plt.show()

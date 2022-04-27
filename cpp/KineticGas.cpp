@@ -217,6 +217,7 @@ KineticGas::KineticGas(std::vector<double> init_mole_weights,
         w_p = &KineticGas::w_spherical_potential;
         potential_p = &KineticGas::mie_potential;
         p_potential_derivative_r = &KineticGas::mie_potential_derivative;
+        p_potential_dblderivative_rr = &KineticGas::mie_potential_dblderivative_rr;
         break;
     default:
         throw "Invalid potential mode!";
@@ -492,6 +493,10 @@ double KineticGas::potential_derivative_r(int ij, double r, double theta){
     return std::invoke(p_potential_derivative_r, this, ij, r, theta);
 }
 
+double KineticGas::potential_dblderivative_rr(int ij, double r, double theta){
+    return std::invoke(p_potential_dblderivative_rr, this, ij, r, theta);
+}
+
 double KineticGas::HS_potential(int ij, double r, double theta){
     if (r > sigma_map[ij]){
         return 0.0;
@@ -511,7 +516,17 @@ double KineticGas::mie_potential(int ij, double r, double theta){
 }
 
 double KineticGas::mie_potential_derivative(int ij, double r, double theta){
-    return C_map[ij] * eps_map[ij] * ((- lr_map[ij] * pow(sigma_map[ij], lr_map[ij]) / pow(r, lr_map[ij] + 1)) + la_map[ij] * pow(sigma_map[ij], la_map[ij]) / pow(r, la_map[ij] + 1) );
+    const double lr = lr_map[ij];
+    const double la = la_map[ij];
+    const double s = sigma_map[ij];
+    return C_map[ij] * eps_map[ij] * ((la * pow(s, la) / pow(r, la + 1)) - (lr * pow(s, lr) / pow(r, lr + 1)));
+}
+
+double KineticGas::mie_potential_dblderivative_rr(int ij, double r, double theta){
+    const double lr = lr_map[ij];
+    const double la = la_map[ij];
+    const double s = sigma_map[ij];
+    return C_map[ij] * eps_map[ij] * ((lr * (lr + 1) * pow(s, lr) / pow(r, lr + 2)) - (la * (la + 1) * pow(s, la) / pow(r, la + 2)));
 }
 
 #pragma endregion
@@ -670,6 +685,19 @@ double KineticGas::theta_integrand(int ij, double T, double r, double g, double 
     return pow((pow(r, 4) / pow(b, 2)) * (1.0 - potential(ij, r, 1.0) / (BOLTZMANN * T * pow(g, 2))) - pow(r, 2), -0.5);
 }
 
+double KineticGas::theta_integrand_dblderivative(int ij, double T, double r, double g, double b){
+    // Expressing the integrand as f = (core)^{-1/2}
+    const double a = 1.0 / (pow(b, 2) * BOLTZMANN * T * pow(g, 2));
+    const double u = potential(ij, r, 1.0);
+    const double u_prime = potential_derivative_r(ij, r, 1.0);
+    const double u_dblprime = potential_dblderivative_rr(ij, r, 1.0);
+    const double core = pow(r, 4) / pow(b, 2) - a * pow(r, 4) * u - pow(r, 2);
+    const double core_prime = 4 * pow(r, 3) / pow(b, 2) - a * (4 * pow(r, 3) * u + pow(r, 4) * u_prime) - 2 * r;
+    const double core_dblprime = 12.0 * pow(r, 2) / pow(b, 2) - a * (12 * pow(r, 2) * u + 8 * pow(r, 3) * u_prime + pow(r, 4) * u_dblprime) - 2;
+
+    return (3.0 / 4.0) * pow(core, -2.5) * core_prime - 0.5 * pow(core, - 1.5) * core_dblprime;
+}
+
 double KineticGas::get_R_rootfunc(int ij, double T, double g, double b, double& r){
     return (potential(ij, r, 1.0) / (BOLTZMANN * T * pow(g, 2))) + pow(b / r, 2) - 1;
 }
@@ -779,19 +807,20 @@ PYBIND11_MODULE(KineticGas_d, handle){
         .def("H_ij", &KineticGas::H_ij)
         .def("H_i", &KineticGas::H_i)
         .def("H_simple", &KineticGas::H_simple)
-        
-        .def("theta", &KineticGas::theta)
+
         .def("chi", &KineticGas::chi)
         .def("get_R", &KineticGas::get_R)
         .def("potential", &KineticGas::potential)
         .def("potential_derivative_r", &KineticGas::potential_derivative_r)
+        .def("potential_dblderivative_rr", &KineticGas::potential_dblderivative_rr)
         .def("omega", &KineticGas::omega)
 
         .def("get_R_rootfunc", &KineticGas::get_R_rootfunc)
         .def("get_R_rootfunc_derivative", &KineticGas::get_R_rootfunc_derivative)
 
         .def("theta", &KineticGas::theta)
-        .def("theta_integrand", &KineticGas::theta_integrand);
+        .def("theta_integrand", &KineticGas::theta_integrand)
+        .def("theta_integrand_dblderivative", &KineticGas::theta_integrand_dblderivative);
 }
 
 #pragma endregion

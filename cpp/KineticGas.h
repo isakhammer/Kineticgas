@@ -47,23 +47,31 @@ class KineticGas{
 
     // Potential models
     double potential(int ij, double r, double theta); // Passes call to the potential corresponding to "potential_mode", using the pointer "potential_p"
-    double potential_derivative_r(int ij, double r, double theta);
 
     using PotentialPointer = double(KineticGas::*)(int, double, double);
     double HS_potential(int ij, double r, double theta);
     double mie_potential(int ij, double r, double theta);
     PotentialPointer potential_p; // Will point to one of the above potentials
 
+    double potential_derivative_r(int ij, double r, double theta);
+
     using PotentialDerivativePointer = double(KineticGas::*)(int, double, double);
     double HS_potential_derivative(int ij, double r, double theta);
     double mie_potential_derivative(int ij, double r, double theta);
     PotentialDerivativePointer p_potential_derivative_r; // Will point to one of the above potential derivatives
 
+    double potential_dblderivative_rr(int ij, double r, double theta);
+
+    using PotentialDblDerivativePointer = double(KineticGas::*)(int, double, double);
+    //double HS_potential_dblderivative_rr(int ij, double r, double theta);
+    double mie_potential_dblderivative_rr(int ij, double r, double theta);
+    PotentialDblDerivativePointer p_potential_dblderivative_rr; // Will point to one of the above potential derivatives
+
     // Helper functions for computing dimentionless collision integrals
-    double mie_potential_derivative(int& ij, double& r);
     double theta(int ij, double T, double r_prime, double g, double b, int N_gridpoints);
     double theta_lim(int ij, double T, double r_prime, double g, int& N_gridpoints);
     double theta_integrand(int ij, double T, double r, double g, double b);
+    double theta_integrand_dblderivative(int ij, double T, double r, double g, double b);
     double get_R(int ij, double T, double g, double b);
     double get_R_rootfunc(int ij, double T, double g, double b, double& r);
     double get_R_rootfunc_derivative(int ij, double T, double g, double b, double& r);
