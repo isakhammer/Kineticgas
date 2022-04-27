@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.4)
 set(PYBIND11_PYTHON_VERSION "3.9")
 set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wno-unknown-pragmas -std=c++17")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
-set(CMAKE_CXX_FLAGS_DEBUG "-O0 -DDEBUG -Wno-unused-parameter -Wno-unused-const-variable")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DDEBUG -Wno-unused-parameter -Wno-unused-const-variable")
 add_subdirectory(pybind11)
 
 if (CMAKE_BUILD_TYPE MATCHES Release)

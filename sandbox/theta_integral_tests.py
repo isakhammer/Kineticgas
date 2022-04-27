@@ -135,8 +135,8 @@ def plot_theta():
 
 
 def plot_theta_av_b(b_min, b_max):
-    b_list = np.linspace(b_min, b_max, 50) * sigma
-    R_factors = [1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
+    b_list = np.linspace(b_min, b_max, 10) * sigma
+    R_factors = [1e-5]#, 1e-6, 1e-7, 1e-8, 1e-9]
     norm = LogNorm(vmin=min(R_factors), vmax=max(R_factors))
     cmap = get_cmap('cool')
     for Rf in R_factors:
@@ -145,12 +145,12 @@ def plot_theta_av_b(b_min, b_max):
         for i, bi in enumerate(b_list):
             R = kin.cpp_kingas.get_R(1, T, g, bi) * (1 + Rf) / (1 + 1e-5)
             t_list[i] = kin.cpp_kingas.theta(1, T, R, g, bi, 50)
-        for i in range(len(b_list)):
-            chi_list[i] = kin.cpp_kingas.chi(1, T, g, b_list[i]) # np.pi - 2 * (t_list[i] - t_list[-1] + np.pi / 2)#
-        plt.plot(b_list / sigma, t_list / np.pi, color=cmap(norm(Rf)), label=r'$\theta$')
-        plt.plot(b_list / sigma, chi_list / np.pi, color=cmap(norm(Rf)), label=r'$\chi$')
+        #for i in range(len(b_list)):
+            #chi_list[i] = kin.cpp_kingas.chi(1, T, g, b_list[i]) # np.pi - 2 * (t_list[i] - t_list[-1] + np.pi / 2)#
+        plt.plot(b_list / sigma, t_list / np.pi, color=cmap(norm(Rf)), label=Rf)#r'$\theta$')
+        #plt.plot(b_list / sigma, chi_list / np.pi, color=cmap(norm(Rf)))#, label=r'$\chi$')
     plt.plot(b_list / sigma, np.ones_like(b_list) * 0.5, linestyle='--', color='black')
-    plt.plot(b_list / sigma, np.zeros_like(b_list), linestyle='--', color='black')
+    #plt.plot(b_list / sigma, np.zeros_like(b_list), linestyle='--', color='black')
     plt.legend()
     plt.xlabel(r'$b$ [$\sigma$]')
     plt.ylabel(r'$\theta$ [$\pi$]')
@@ -179,6 +179,6 @@ def plot_theta_integrand_dblderiv():
     plt.yscale('log')
     plt.show()
 
-plot_theta_integrand_dblderiv()
-#plot_theta_av_b(1, 15)
+#plot_theta_integrand_dblderiv()
+plot_theta_av_b(1, 12)
 #plot_theta()
