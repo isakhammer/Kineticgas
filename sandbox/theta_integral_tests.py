@@ -133,24 +133,6 @@ def plot_theta():
     ax1.set_yscale('log')
     plt.show()
 
-<<<<<<< HEAD
-def plot_theta_av_b():
-    b_list = np.linspace(1.5, 5, 60) * sigma
-    t_list = np.empty_like(b_list)
-    chi_list = np.empty_like(b_list)
-    for i, bi in enumerate(b_list):
-        R = kin.cpp_kingas.get_R(1, T, g, bi)
-        t_list[i] = kin.cpp_kingas.theta(1, T, R, g, bi, 50)
-        chi_list[i] = kin.cpp_kingas.chi(1, T, g, bi)
-
-    plt.plot(b_list/sigma, chi_list / np.pi, label=r'$\chi$')
-    #plt.plot(b_list / sigma, t_list / np.pi, label=r'$\theta$')
-    plt.plot(b_list / sigma, np.zeros_like(b_list), linestyle='--', color='black')
-    plt.legend(title=r'rad. [$\pi$]')
-    plt.show()
-
-plot_theta_av_b()
-=======
 
 def plot_theta_av_b(b_min, b_max):
     b_list = np.linspace(b_min, b_max, 50) * sigma
@@ -175,5 +157,4 @@ def plot_theta_av_b(b_min, b_max):
     plt.show()
 
 plot_theta_av_b(1, 15)
->>>>>>> chi_integral
 #plot_theta()
