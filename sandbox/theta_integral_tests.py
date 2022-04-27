@@ -156,5 +156,26 @@ def plot_theta_av_b(b_min, b_max):
     plt.ylabel(r'$\theta$ [$\pi$]')
     plt.show()
 
-plot_theta_av_b(1, 15)
+def plot_theta_integrand_dblderiv():
+    r_grid = np.array(erfspace(R, 10 * sigma, 50, 2, 1))
+    integrand = np.empty_like(r_grid)
+    for i, r in enumerate(r_grid):
+        integrand[i] = func(r)
+
+    d2tdr2 = np.empty(len(integrand) - 2)
+    for i in range(1, len(integrand) - 1):
+        t_1 = func(r_grid[i - 1])
+        t0 = func(r_grid[i])
+        t1 = func(r_grid[i + 1])
+        h1 = r_grid[i + 1] - r_grid[i]
+        h2 = r_grid[i] - r_grid[i - 1]
+        d2tdr2[i - 1] = 2 * (t1 + (h1 / h2) * t_1 - (h1 / h2 + 1) * t0) / (np.power(h1, 2) + h1 * h2)
+
+    plt.plot(r_grid[1 : -1] / sigma, d2tdr2)
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.show()
+
+plot_theta_integrand_dblderiv()
+#plot_theta_av_b(1, 15)
 #plot_theta()

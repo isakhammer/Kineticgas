@@ -12,8 +12,8 @@ kin = KineticGas('AR,C1', potential='mie')
 sigma = kin.sigma_ij[0, 0]
 
 def plot_chi(g=None, b=None):
-    b_list = np.linspace(0, 25, 5) * sigma
-    g_list = np.linspace(1e-3, 5, 60)
+    b_list = np.linspace(1e-3, 3, 5) * sigma
+    g_list = np.linspace(1e-3, 3, 60)
 
     if g is None and b is None:
         chi_list = np.empty((len(b_list), len(g_list)))
@@ -51,8 +51,8 @@ def plot_chi(g=None, b=None):
 
 def plot_integrand(l, r, ax, title_l=False, title_r=False):
 
-    b_list = np.linspace(5, 50, 60)
-    g_list = np.linspace(1e-5, 5, 60)
+    b_list = np.linspace(1e-3, 2.5, 30)
+    g_list = np.linspace(1e-5, 3, 30)
 
     f_list = np.empty((len(b_list), len(g_list)))
 
@@ -88,9 +88,6 @@ def integrate_quad(l, r): # Bad idea :(
     print(I)
 
 if __name__ == '__main__':
-    plot_chi(g=2)
-    plt.show()
-    exit(0)
 
     fig = plt.figure()
     for i in range(3):
