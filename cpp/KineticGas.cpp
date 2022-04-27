@@ -539,45 +539,33 @@ double KineticGas::mie_potential_dblderivative_rr(int ij, double r, double theta
 
 double KineticGas::theta(const int ij, const double T, const double r_prime, const double g, const double b){
 
-    double eps_tol = 1e-5; // Error tolerance in each integration step
+    double step_eps_tol = 1e-6; // Absolute Error tolerance in each integration step
+    double rel_eps_tol = 1e-4; // Relative error tolerance for total integration
+    double abs_eps_tot; // Total absolute error
 
-    double total_integral = 0;
+    double total_integral;
     double integral_09; // Integral at 90% completion
     double r09;
     double convergence_threshold = 0.99; // Integral has converged when integral_09 >= convergence_threshold * total_integral
     double A_coeff, B_coeff; // Coefficients for y = Ax + B, that interpolates the integrand in points (r1, r2)
 
-    int N_total_integration_steps = 0;
-    double r2 = r_prime;
+    int N_total_integration_steps;
+    double r2;
     double r1; // will be overwritten by r2 at the start of the first iteration
     double delta_r;
-    double integrand2 = theta_integrand(ij, T, r2, g, b);
+    double integrand2;
     double integrand1;
-    double rel_eps_tot = 0;
+
     // Trapezoid rule (piecewise linear interpolation) integration
-    for (int i = 0; i < 10; i++){ // Start by doing 10 integration steps
-        r1 = r2;
-        delta_r = pow(12.0 * eps_tol / theta_integrand_dblderivative(ij, T, r1, g, b), 1.0 / 3.0); // Ensure error is less than tolerance
-        r2 = r1 + delta_r;
-
-        integrand1 = integrand2;
+    do { // Compute integral, if total relative error exceeds tolerance, reduce stepwise tolerance and recompute.
+        total_integral = 0;
+        abs_eps_tot = 0;
+        N_total_integration_steps = 0;
+        r2 = r_prime;
         integrand2 = theta_integrand(ij, T, r2, g, b);
-        A_coeff = (integrand2 - integrand1) / (r2 - r1);
-        B_coeff = integrand1 - A_coeff * r1;
-        total_integral += A_coeff * (pow(r2, 2) - pow(r1, 2)) / 2 + B_coeff * (r2 - r1);
-        rel_eps_tot += theta_integrand_dblderivative(ij, T, r1, g, b) * pow(r2 - r1, 3) / 12.0;
-
-        N_total_integration_steps++;
-    }
-    int N_increment_points;
-    do{ // Compute integral, continue until convergence
-        r09 = r2;
-        integral_09 = total_integral;
-        N_increment_points = (int) (N_total_integration_steps / 9.0) + 0.5;
-
-        for (int i = 0; i < N_increment_points; i++){
+        for (int i = 0; i < 100; i++){ // Start by doing 100 integration steps
             r1 = r2;
-            delta_r = pow(12.0 * eps_tol / theta_integrand_dblderivative(ij, T, r1, g, b), 1.0 / 3.0); // Ensure error is less than tolerance
+            delta_r = pow(12.0 * step_eps_tol / theta_integrand_dblderivative(ij, T, r1, g, b), 1.0 / 3.0); // Ensure error is less than tolerance
             r2 = r1 + delta_r;
 
             integrand1 = integrand2;
@@ -585,37 +573,66 @@ double KineticGas::theta(const int ij, const double T, const double r_prime, con
             A_coeff = (integrand2 - integrand1) / (r2 - r1);
             B_coeff = integrand1 - A_coeff * r1;
             total_integral += A_coeff * (pow(r2, 2) - pow(r1, 2)) / 2 + B_coeff * (r2 - r1);
-            rel_eps_tot += theta_integrand_dblderivative(ij, T, r1, g, b) * pow(r2 - r1, 3) / 12.0;
-
-            if (N_total_integration_steps > 48440 && N_total_integration_steps < 48447){
-                std::printf("%i \t %E\t %E \t %E \t %E \t %E \t %E\n", N_total_integration_steps, theta_integrand_dblderivative(ij, T, r1, g, b),
-                 r1 / sigma_map[ij], r2 / sigma_map[ij], integrand1, total_integral / PI, rel_eps_tot / PI);
-            }
+            abs_eps_tot += theta_integrand_dblderivative(ij, T, r1, g, b) * pow(r2 - r1, 3) / 12.0;
 
             N_total_integration_steps++;
         }
+        int N_increment_points;
+        do{ // Compute integral, continue until convergence
+            r09 = r2;
+            integral_09 = total_integral;
+            N_increment_points = (int) (N_total_integration_steps / 9.0) + 0.5;
 
+            for (int i = 0; i < N_increment_points; i++){
+                r1 = r2;
+                delta_r = pow(12.0 * step_eps_tol / theta_integrand_dblderivative(ij, T, r1, g, b), 1.0 / 3.0); // Ensure error is less than tolerance in each step
+                r2 = r1 + delta_r;
+
+                integrand1 = integrand2;
+                integrand2 = theta_integrand(ij, T, r2, g, b);
+                A_coeff = (integrand2 - integrand1) / (r2 - r1);
+                B_coeff = integrand1 - A_coeff * r1;
+                total_integral += A_coeff * (pow(r2, 2) - pow(r1, 2)) / 2 + B_coeff * (r2 - r1);
+                abs_eps_tot += theta_integrand_dblderivative(ij, T, r1, g, b) * pow(r2 - r1, 3) / 12.0;
+
+                N_total_integration_steps++;
+            }
+
+            #ifdef DEBUG
+                if ((integral_09 < convergence_threshold * total_integral) || (isnan(total_integral))){
+                    std::printf("theta = %E pi\n", total_integral / PI);
+                    std::printf("r = %E sigma\n", r2 / sigma_map[ij]);
+                    std::printf("r - r09 = %E sigma\n", (r2 - r09) / sigma_map[ij]);
+                    std::printf("Change in final 10%% is : %E %% of final value\n", (1 - integral_09 / total_integral) * 100.0);
+                    std::printf("N_gridpoints, increment, and increment %% are %i, %i, %E %%\n", N_total_integration_steps, N_increment_points, (100.0 * N_increment_points) / N_total_integration_steps);
+                    std::printf("Relative error is : %E %%\n\n", 100.0 * abs_eps_tot / total_integral);
+                }
+            #endif
+
+        } while (integral_09 < convergence_threshold * total_integral);
+
+        step_eps_tol *= 0.5;
         #ifdef DEBUG
-            if ((integral_09 < convergence_threshold * total_integral) || (isnan(total_integral))){
-                std::printf("theta = %E pi\n", total_integral / PI);
-                std::printf("r = %E sigma\n", r2 / sigma_map[ij]);
-                std::printf("r - r09 = %E sigma\n", (r2 - r09) / sigma_map[ij]);
-                std::printf("Change in final 10%% is : %E %% of final value\n", (1 - integral_09 / total_integral) * 100.0);
-                std::printf("N_gridpoints, increment, and increment %% are %i, %i, %E %%\n", N_total_integration_steps, N_increment_points, (100.0 * N_increment_points) / N_total_integration_steps);
-                std::printf("Relative error is : %E %%\n\n", 100.0 * rel_eps_tot / total_integral);
+            if (abs_eps_tot / total_integral > rel_eps_tol){
+                std::printf("Relative error is less than %E, Tolerance is %E\n", abs_eps_tot / total_integral, rel_eps_tol);
+                std::printf("Reducing step tolerance to %E\n\n", step_eps_tol);
             }
         #endif
 
-    } while (integral_09 < convergence_threshold * total_integral);
+    } while (abs_eps_tot / total_integral > rel_eps_tol || step_eps_tol < 1e-10);
 
-    rel_eps_tot = rel_eps_tot / total_integral;
+    if (step_eps_tol < 1e-10){
+        std::printf("\nWarning : theta integral could not achieve expected precicion\n");
+        std::printf("Upper limit for relative error is %E, tolerance is %E\n", abs_eps_tot / total_integral, rel_eps_tol);
+        std::printf("Integral parameters are :\nij = %i \nT = %E \nb = %E sigma\ng = %E \nR = %E sigma\n\n", ij, T, b / sigma_map[ij], g, r_prime / sigma_map[ij]);
+    }
 
     #ifdef DEBUG
         std::printf("For b = %E sigma, g = %E\n", b / sigma_map[ij], g);
         std::printf("start, end (sigma) = %E, %E\n", r_prime / sigma_map[ij], r2 / sigma_map[ij]);
         std::printf("Total gridpoints = %i\n", N_total_integration_steps);
         std::printf("Computed theta = %E pi\n", total_integral / PI);
-        std::printf("Relative error is less than %E %% \n\n", rel_eps_tot * 100);
+        std::printf("Relative error is less than %E %%, tolerance is %E %% \n\n", 100 * abs_eps_tot / total_integral, 100 * rel_eps_tol);
     #endif
 
     return total_integral;
