@@ -539,6 +539,7 @@ double KineticGas::mie_potential_dblderivative_rr(int ij, double r, double theta
 
 double KineticGas::theta(const int ij, const double T, const double g, const double b){
     if (b / sigma_map[ij] > 10) return PI / 2;
+    if (b / sigma_map[ij] < 1e-3) return 0;
     double R = get_R(ij, T, g, b);
     return theta_integral(ij, T, R, g, b) - theta_lim(ij, T, g) + PI / 2;
 }
