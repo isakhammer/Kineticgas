@@ -184,6 +184,6 @@ def plot_theta_integrand_dblderiv():
 
 #print(kin.cpp_kingas.chi(1, T, g, 9 * sigma))
 
-#plot_theta_integrand_dblderiv()
-plot_theta_av_b(1, 12)
+plot_theta_integrand_dblderiv()
+#plot_theta_av_b(1, 12)
 #plot_theta()

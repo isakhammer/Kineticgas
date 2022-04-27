@@ -180,8 +180,8 @@ if __name__ == '__main__':
     kin = KineticGas('AR,C1', potential='mie')
     sigma = kin.sigma_ij[0, 0]
     T, g0, b = 300, 2, 0.8
-    g0_list = [1, 2.5, 5]
-    b_list = [0.5, 1, 1.5]
+    g0_list = [1, 1.5, 2]
+    b_list = [0.8, 0.9, 1]
     fig, axs = plt.subplots(1, 3, sharey='all')
 
     xrange = 3 # [sigma]
@@ -208,8 +208,8 @@ if __name__ == '__main__':
             #print('Minimum distance (numeric):', min(np.sqrt(x**2 + y**2)))
             #print('Minimum distance (kingas):', kin.cpp_kingas.get_R(1, T, g0, b * sigma) / sigma)
             #print()
-            #print('Chi (numeric) :', round(get_chi_from_path(x, y) / np.pi, 2), 'pi')
-            #print('Chi (kingas)  :', round(kin.cpp_kingas.chi(1, T, g0, b * sigma) / np.pi, 2), 'pi')
+            print('Chi (numeric) :', round(get_chi_from_path(x, y) / np.pi, 2), 'pi')
+            print('Chi (kingas)  :', round(kin.cpp_kingas.chi(1, T, g0, b * sigma) / np.pi, 2), 'pi')
             #print()
 
             for i in range(1, len(g)):
