@@ -11,25 +11,29 @@ if '-test' in args:
         
     from pykingas import mie_unittests, KineticGas, py_KineticGas as pykg
 
-    r = mie_unittests.run_tests()
+    if '-print' in args:
+        r = mie_unittests.run_tests(do_print=True)
+    elif '-plot' in args:
+        r = mie_unittests.run_tests(do_plot=True)
+    else:
+        r = mie_unittests.run_tests()
     if r != 0:
         print('Mie unittests failed with exit code :', r)
-
-        if '-print' in args:
-            mie_unittests.run_tests(do_print=True)
-        if '-plot' in args:
-            mie_unittests.run_tests(do_plot=True)
+        exit(r)
+    elif '-print' not in args and '-plot' not in args:
+            print('Mie unittests were successful!')
 
     kin = KineticGas('AR,HE')
-    r = pykg.test()
-    if r == 0:
-        print('Python test was successful!')
-    else:
-        print('Python test failed with exit code :', r)
-    
     if '-print' in args:
-        pykg.test(do_print=True)
-    if '-plot' in args:
-        pykg.test(plot=True)
+        r = pykg.test(do_print=True)
+    elif '-plot' in args:
+        r = pykg.test(plot=True)
+    else:
+        r = pykg.test()
+
+    if r != 0:
+        print('Python test failed with exit code :', r)
+    elif '-print' not in args and '-plot' not in args:
+        print('Python test was successful!')
 
     exit(r)
