@@ -3,7 +3,6 @@ cpp/release/
 cpp/debug/
 python/venv
 venv/
-*.so
 */__pycache__/
 dist/
 build/

@@ -518,7 +518,7 @@ double KineticGas::mie_potential_derivative(int ij, double r, double theta){
 
 #pragma region // Helper funcions for computing dimentionless collision integrals
 
-double KineticGas::theta(int ij, double T, double r_prime, double g, double b, int& N_gridpoints){
+double KineticGas::theta(int ij, double T, double r_prime, double g, double b, int N_gridpoints){
     double lower_limit = r_prime;
     double upper_limit = lower_limit;
     double upper_limit_cutoff_factor = 1e-5;
@@ -544,9 +544,9 @@ double KineticGas::theta(int ij, double T, double r_prime, double g, double b, i
 
         lower_limit = upper_limit; // On iterations > 1, this prevents the integral up to "upper_limit" from being recomputed.
 
-        while (theta_integrand(ij, T, upper_limit, g, b) > upper_limit_cutoff_factor * theta_0){
+        do {
             upper_limit += lower_limit;
-        }
+        }while (theta_integrand(ij, T, upper_limit, g, b) > upper_limit_cutoff_factor * theta_0);
 
         do{ // Increase number of integration points
             // Until Error in the last integration two steps is below tolerance (By adjusting N_gridpoints)
@@ -657,7 +657,9 @@ double KineticGas::theta(int ij, double T, double r_prime, double g, double b, i
 
     #ifdef DEBUG
         std::printf("For b = %E sigma, g = %E\n", b / sigma_map[ij], g);
-        std::printf("Computed theta = %E \n\n", total_integral);
+        std::printf("init, start, end (sigma) = %E %E, %E\n", r_prime / sigma_map[ij], lower_limit / sigma_map[ij], upper_limit / sigma_map[ij]);
+        std::printf("Total gridpoints = %i\n", N_integrated_points);
+        std::printf("Computed theta = %E pi\n\n", total_integral / PI);
     #endif
 
     return total_integral;
@@ -714,12 +716,21 @@ double KineticGas::get_R(int ij, double T, double g, double b){
 }
 
 double KineticGas::chi(int ij, double T, double g, double b){
+    const double b_cutoff = 10.0 * sigma_map[ij];
+    double R_lim = get_R(ij, T, g, b_cutoff);
     double R = get_R(ij, T, g, b);
     int N_gridpoints = 50;
-    double val = PI - 2 * theta(ij, T, R, g, b, N_gridpoints);
+    double theta_lim = theta(ij, T, R_lim, g, b_cutoff, N_gridpoints);
+    double theta_val = theta(ij, T, R, g, b, N_gridpoints);
+
+    double val;
+    if (abs(theta_val - theta_lim) < FLTEPS) val = 0.0;
+    else val = PI - 2.0 * (theta_val - theta_lim + (PI / 2.0));
     #ifdef DEBUG
+        std::printf("Limiting theta : %E pi\n", theta_lim / PI);
+        std::printf("Theta : %E pi\n", theta_val / PI);
         std::printf("For b = %E sigma, g = %E\n", b / sigma_map[ij], g);
-        std::printf("Computed chi = %E\n\n", val);
+        std::printf("Computed chi = %E pi \n\n", val);
     #endif
     return val;
 }

@@ -2,7 +2,7 @@ from pykingas import KineticGas, logspace, erfspace
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.cm import get_cmap
-from matplotlib.colors import Normalize
+from matplotlib.colors import Normalize, LogNorm
 from scipy.integrate import quad
 from scipy.special import erf
 plt.style.use('default')
@@ -17,6 +17,7 @@ integral = lambda R_min, r: quad(func, R_min, r)[0]
 theta = lambda R_min, N: kin.cpp_kingas.theta(1, T, R_min, g, b, N)
 
 R = kin.cpp_kingas.get_R(1, T, g, b)
+R_real = R / (1 + 1e-5)
 r_max = R
 while func(r_max) > 1e-6 * func(R):
     r_max += R
@@ -100,7 +101,7 @@ def plot_theta():
     cmap = get_cmap('cool')
     norm = Normalize(vmin=min(N_list), vmax=max(N_list))
     r_min_plot = R # 7.5 * sigma
-    r_max = 50 * sigma
+    r_max = 100 * sigma
     for i, N in enumerate(N_list):
         print('N =', N)
         expo = 1
@@ -123,6 +124,7 @@ def plot_theta():
         print('theta0 =', func(r_min_plot))
         #print()
         ax2.plot(gridpoints / sigma, [t / np.pi for _ in gridpoints], color=cmap(norm(N)), linestyle='--')
+        ax2.plot(gridpoints[2:] / sigma, [py_trapz(gridpoints, i) / np.pi for i in range(2, len(gridpoints))], color=cmap(norm(N)))
 
     ax1.legend()
     ax2.set_xscale('log')
@@ -133,15 +135,26 @@ def plot_theta():
 
 
 def plot_theta_av_b(b_min, b_max):
-    b_list = np.linspace(b_min, b_max, 30) * sigma
-    t_list = np.empty_like(b_list)
-    for i, bi in enumerate(b_list):
-        R = kin.cpp_kingas.get_R(1, T, g, bi)
-        t_list[i] = kin.cpp_kingas.theta(1, T, R, g, bi, 50) #kin.cpp_kingas.chi(1, T, g, bi)
-    plt.plot(b_list / sigma, t_list / np.pi, marker='|')
+    b_list = np.linspace(b_min, b_max, 50) * sigma
+    R_factors = [1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
+    norm = LogNorm(vmin=min(R_factors), vmax=max(R_factors))
+    cmap = get_cmap('cool')
+    for Rf in R_factors:
+        t_list = np.empty_like(b_list)
+        chi_list = np.empty_like(b_list)
+        for i, bi in enumerate(b_list):
+            R = kin.cpp_kingas.get_R(1, T, g, bi) * (1 + Rf) / (1 + 1e-5)
+            t_list[i] = kin.cpp_kingas.theta(1, T, R, g, bi, 50)
+        for i in range(len(b_list)):
+            chi_list[i] = kin.cpp_kingas.chi(1, T, g, b_list[i]) # np.pi - 2 * (t_list[i] - t_list[-1] + np.pi / 2)#
+        plt.plot(b_list / sigma, t_list / np.pi, color=cmap(norm(Rf)), label=r'$\theta$')
+        plt.plot(b_list / sigma, chi_list / np.pi, color=cmap(norm(Rf)), label=r'$\chi$')
+    plt.plot(b_list / sigma, np.ones_like(b_list) * 0.5, linestyle='--', color='black')
+    plt.plot(b_list / sigma, np.zeros_like(b_list), linestyle='--', color='black')
+    plt.legend()
     plt.xlabel(r'$b$ [$\sigma$]')
     plt.ylabel(r'$\theta$ [$\pi$]')
     plt.show()
 
-plot_theta_av_b(0, 2.5)
+plot_theta_av_b(1, 15)
 #plot_theta()
