@@ -13,17 +13,27 @@ if '-test' in args:
     except:
         print('Missing module dependency pyctp (ThermoPack)')
         
-    from pykingas import KineticGas, py_KineticGas as pykg
+    from pykingas import mie_unittests, KineticGas, py_KineticGas as pykg
+
+    r = mie_unittests.run_tests()
+    if r != 0:
+        print('Mie unittests failed with exit code :', r)
+
+        if '-print' in args:
+            mie_unittests.run_tests(do_print=True)
+        if '-plot' in args:
+            mie_unittests.run_tests(do_plot=True)
+
     kin = KineticGas('AR,HE')
-    a = pykg.test()
-    if a == 0:
+    r = pykg.test()
+    if r == 0:
         print('Python test was successful!')
     else:
-        print('Python test failed with exit code :', a)
+        print('Python test failed with exit code :', r)
     
     if '-print' in args:
         pykg.test(do_print=True)
     if '-plot' in args:
         pykg.test(plot=True)
 
-    exit(a)
+    exit(r)
