@@ -68,8 +68,8 @@ class KineticGas{
     PotentialDblDerivativePointer p_potential_dblderivative_rr; // Will point to one of the above potential derivatives
 
     // Helper functions for computing dimentionless collision integrals
-    double theta(const int ij, const double T, const double r_prime, const double g, const double b, const int init_N_gridpoints);
-    double theta_lim(int ij, double T, double r_prime, double g, int& N_gridpoints);
+    double theta(const int ij, const double T, const double r_prime, const double g, const double b);
+    //double theta_lim(int ij, double T, double g, double b);
     double theta_integrand(int ij, double T, double r, double g, double b);
     double theta_integrand_dblderivative(int ij, double T, double r, double g, double b);
     double get_R(int ij, double T, double g, double b);

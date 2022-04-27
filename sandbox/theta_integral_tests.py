@@ -144,7 +144,7 @@ def plot_theta_av_b(b_min, b_max):
         chi_list = np.empty_like(b_list)
         for i, bi in enumerate(b_list):
             R = kin.cpp_kingas.get_R(1, T, g, bi) * (1 + Rf) / (1 + 1e-5)
-            t_list[i] = kin.cpp_kingas.theta(1, T, R, g, bi, 50)
+            t_list[i] = kin.cpp_kingas.theta(1, T, R, g, bi)
         #for i in range(len(b_list)):
             #chi_list[i] = kin.cpp_kingas.chi(1, T, g, b_list[i]) # np.pi - 2 * (t_list[i] - t_list[-1] + np.pi / 2)#
         plt.plot(b_list / sigma, t_list / np.pi, color=cmap(norm(Rf)), label=Rf)#r'$\theta$')
@@ -157,7 +157,7 @@ def plot_theta_av_b(b_min, b_max):
     plt.show()
 
 def plot_theta_integrand_dblderiv():
-    r_grid = np.array(erfspace(R, 10 * sigma, 50, 2, 1))
+    r_grid = np.array(erfspace(4e3 * sigma, 6e3 * sigma, 50, 2, 1))
     integrand = np.empty_like(r_grid)
     analytic_d2tdr2 = np.empty_like(r_grid)
     for i, r in enumerate(r_grid):
@@ -173,11 +173,16 @@ def plot_theta_integrand_dblderiv():
         h2 = r_grid[i] - r_grid[i - 1]
         d2tdr2[i - 1] = 2 * (t1 + (h1 / h2) * t_1 - (h1 / h2 + 1) * t0) / (np.power(h1, 2) + h1 * h2)
 
-    plt.plot(r_grid[1 : -1] / sigma, d2tdr2)
-    plt.plot(r_grid / sigma, analytic_d2tdr2)
-    plt.xscale('log')
-    plt.yscale('log')
+    _, axs = plt.subplots(2, 1, sharex='all')
+    ax1, ax2 = axs
+    ax1.plot(r_grid / sigma, integrand, marker='.')
+    ax2.plot(r_grid[1 : -1] / sigma, d2tdr2, marker='.')
+    ax2.plot(r_grid / sigma, analytic_d2tdr2)
+    #ax2.set_xscale('log')
+    #plt.yscale('log')
     plt.show()
+
+#print(kin.cpp_kingas.chi(1, T, g, 9 * sigma))
 
 #plot_theta_integrand_dblderiv()
 plot_theta_av_b(1, 12)
