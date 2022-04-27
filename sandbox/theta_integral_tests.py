@@ -143,8 +143,8 @@ def plot_theta_av_b(b_min, b_max):
         t_list = np.empty_like(b_list)
         chi_list = np.empty_like(b_list)
         for i, bi in enumerate(b_list):
-            R = kin.cpp_kingas.get_R(1, T, g, bi) * (1 + Rf) / (1 + 1e-5)
-            t_list[i] = kin.cpp_kingas.theta(1, T, R, g, bi)
+            #R = kin.cpp_kingas.get_R(1, T, g, bi) * (1 + Rf) / (1 + 1e-5)
+            t_list[i] = kin.cpp_kingas.theta(1, T, g, bi)
         #for i in range(len(b_list)):
             #chi_list[i] = kin.cpp_kingas.chi(1, T, g, b_list[i]) # np.pi - 2 * (t_list[i] - t_list[-1] + np.pi / 2)#
         plt.plot(b_list / sigma, t_list / np.pi, color=cmap(norm(Rf)), label=Rf)#r'$\theta$')
