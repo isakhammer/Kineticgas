@@ -135,32 +135,34 @@ def plot_theta():
 
 
 def plot_theta_av_b(b_min, b_max):
-    b_list = np.linspace(b_min, b_max, 50) * sigma
-    R_factors = [1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
+    b_list = np.linspace(b_min, b_max, 10) * sigma
+    R_factors = [1e-5]#, 1e-6, 1e-7, 1e-8, 1e-9]
     norm = LogNorm(vmin=min(R_factors), vmax=max(R_factors))
     cmap = get_cmap('cool')
     for Rf in R_factors:
         t_list = np.empty_like(b_list)
         chi_list = np.empty_like(b_list)
         for i, bi in enumerate(b_list):
-            R = kin.cpp_kingas.get_R(1, T, g, bi) * (1 + Rf) / (1 + 1e-5)
-            t_list[i] = kin.cpp_kingas.theta(1, T, R, g, bi, 50)
-        for i in range(len(b_list)):
-            chi_list[i] = kin.cpp_kingas.chi(1, T, g, b_list[i]) # np.pi - 2 * (t_list[i] - t_list[-1] + np.pi / 2)#
-        plt.plot(b_list / sigma, t_list / np.pi, color=cmap(norm(Rf)), label=r'$\theta$')
-        plt.plot(b_list / sigma, chi_list / np.pi, color=cmap(norm(Rf)), label=r'$\chi$')
+            #R = kin.cpp_kingas.get_R(1, T, g, bi) * (1 + Rf) / (1 + 1e-5)
+            t_list[i] = kin.cpp_kingas.theta(1, T, g, bi)
+        #for i in range(len(b_list)):
+            #chi_list[i] = kin.cpp_kingas.chi(1, T, g, b_list[i]) # np.pi - 2 * (t_list[i] - t_list[-1] + np.pi / 2)#
+        plt.plot(b_list / sigma, t_list / np.pi, color=cmap(norm(Rf)), label=Rf)#r'$\theta$')
+        #plt.plot(b_list / sigma, chi_list / np.pi, color=cmap(norm(Rf)))#, label=r'$\chi$')
     plt.plot(b_list / sigma, np.ones_like(b_list) * 0.5, linestyle='--', color='black')
-    plt.plot(b_list / sigma, np.zeros_like(b_list), linestyle='--', color='black')
+    #plt.plot(b_list / sigma, np.zeros_like(b_list), linestyle='--', color='black')
     plt.legend()
     plt.xlabel(r'$b$ [$\sigma$]')
     plt.ylabel(r'$\theta$ [$\pi$]')
     plt.show()
 
 def plot_theta_integrand_dblderiv():
-    r_grid = np.array(erfspace(R, 10 * sigma, 50, 2, 1))
+    r_grid = np.array(erfspace(4e3 * sigma, 6e3 * sigma, 50, 2, 1))
     integrand = np.empty_like(r_grid)
+    analytic_d2tdr2 = np.empty_like(r_grid)
     for i, r in enumerate(r_grid):
         integrand[i] = func(r)
+        analytic_d2tdr2[i] = kin.cpp_kingas.theta_integrand_dblderivative(1, T, r, g, b)
 
     d2tdr2 = np.empty(len(integrand) - 2)
     for i in range(1, len(integrand) - 1):
@@ -171,11 +173,17 @@ def plot_theta_integrand_dblderiv():
         h2 = r_grid[i] - r_grid[i - 1]
         d2tdr2[i - 1] = 2 * (t1 + (h1 / h2) * t_1 - (h1 / h2 + 1) * t0) / (np.power(h1, 2) + h1 * h2)
 
-    plt.plot(r_grid[1 : -1] / sigma, d2tdr2)
-    plt.xscale('log')
-    plt.yscale('log')
+    _, axs = plt.subplots(2, 1, sharex='all')
+    ax1, ax2 = axs
+    ax1.plot(r_grid / sigma, integrand, marker='.')
+    ax2.plot(r_grid[1 : -1] / sigma, d2tdr2, marker='.')
+    ax2.plot(r_grid / sigma, analytic_d2tdr2)
+    #ax2.set_xscale('log')
+    #plt.yscale('log')
     plt.show()
 
-plot_theta_integrand_dblderiv()
-#plot_theta_av_b(1, 15)
+#print(kin.cpp_kingas.chi(1, T, g, 9 * sigma))
+
+#plot_theta_integrand_dblderiv()
+plot_theta_av_b(1, 12)
 #plot_theta()

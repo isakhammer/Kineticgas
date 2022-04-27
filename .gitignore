@@ -3,7 +3,7 @@ cpp/release/
 cpp/debug/
 python/venv
 venv/
-*/__pycache__/
+*__pycache__/
 dist/
 build/
 pykingas.egg-info/
