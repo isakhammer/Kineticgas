@@ -1,9 +1,8 @@
-from pykingas import KineticGas
-from pykingas.KineticGas import logspace, erfspace
+from pykingas import KineticGas, logspace, erfspace
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.cm import get_cmap
-from matplotlib.colors import Normalize
+from matplotlib.colors import Normalize, LogNorm
 from scipy.integrate import quad
 from scipy.special import erf
 plt.style.use('default')
@@ -11,17 +10,17 @@ plt.style.use('default')
 kin = KineticGas('AR,C1', potential='mie')
 sigma = kin.sigma_ij[0, 0]
 
-T, g, b = 300, 2, 0.8 * sigma
+T, g, b = 300, 2, 7.5 * sigma
 
 func = lambda r: kin.cpp_kingas.theta_integrand(1, T, r, g, b)
 integral = lambda R_min, r: quad(func, R_min, r)[0]
 theta = lambda R_min, N: kin.cpp_kingas.theta(1, T, R_min, g, b, N)
 
 R = kin.cpp_kingas.get_R(1, T, g, b)
+R_real = R / (1 + 1e-5)
 r_max = R
 while func(r_max) > 1e-6 * func(R):
     r_max += R
-
 
 def py_logspace(lmin, lmax, N_gridpoints):
     grid = np.empty(N_gridpoints)
@@ -101,37 +100,40 @@ def plot_theta():
     ax1, ax2 = axs
     cmap = get_cmap('cool')
     norm = Normalize(vmin=min(N_list), vmax=max(N_list))
-
+    r_min_plot = R # 7.5 * sigma
+    r_max = 100 * sigma
     for i, N in enumerate(N_list):
         print('N =', N)
         expo = 1
         prefac = 2
-        linpoints = np.linspace(R, r_max, N, endpoint=True)
-        gridpoints = erfspace(R, r_max, N, prefac, expo)
+        gridpoints = erfspace(r_min_plot, r_max, N, prefac, expo)
         while abs(func(gridpoints[0]) - abs(func(gridpoints[1]))) / func(gridpoints[0]) > 0.1:
             expo *= 0.9
             prefac *= 1.5
-            gridpoints = erfspace(R, r_max, N, prefac, expo)
+            gridpoints = erfspace(r_min_plot, r_max, N, prefac, expo)
 
-        ax1.plot(gridpoints, [func(r) / np.pi for r in gridpoints], color=cmap(norm(N)), linestyle='', marker='.')
-        ax2.plot(gridpoints[1:], [py_trapz(gridpoints, i) / np.pi for i in range(1, N)], color=cmap(norm(N)))
+        dtdr = [func(r) / np.pi for r in gridpoints]
+        print('dtdr : ', dtdr)
+        ax1.plot(gridpoints / sigma, dtdr, color=cmap(norm(N)), linestyle='', marker='.', label=N)
 
-        t = theta(R, N) # N is automatically adjusted inside theta, that is why theta(R, 10) gives the same result as theta(R, 100)
+        t = theta(r_min_plot, N) # N is automatically adjusted inside theta, that is why theta(R, 10) gives the same result as theta(R, 100)
         #print()
         #print('A, B =', prefac, expo)
         #print('r_max =', r_max)
         #print('R =', R)
-        #print('theta0 =', func(R))
+        print('theta0 =', func(r_min_plot))
         #print()
-        ax2.plot(gridpoints, [t / np.pi for _ in gridpoints], color=cmap(norm(N)), linestyle='--')
+        ax2.plot(gridpoints / sigma, [t / np.pi for _ in gridpoints], color=cmap(norm(N)), linestyle='--')
+        ax2.plot(gridpoints[2:] / sigma, [py_trapz(gridpoints, i) / np.pi for i in range(2, len(gridpoints))], color=cmap(norm(N)))
 
-
+    ax1.legend()
     ax2.set_xscale('log')
     ax1.set_ylabel(r'd$\theta$/d$r$ [m$^{-1}$]')
     ax2.set_ylabel(r'$\theta$ [$\pi$]')
     ax1.set_yscale('log')
     plt.show()
 
+<<<<<<< HEAD
 def plot_theta_av_b():
     b_list = np.linspace(1.5, 5, 60) * sigma
     t_list = np.empty_like(b_list)
@@ -148,4 +150,30 @@ def plot_theta_av_b():
     plt.show()
 
 plot_theta_av_b()
+=======
+
+def plot_theta_av_b(b_min, b_max):
+    b_list = np.linspace(b_min, b_max, 50) * sigma
+    R_factors = [1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
+    norm = LogNorm(vmin=min(R_factors), vmax=max(R_factors))
+    cmap = get_cmap('cool')
+    for Rf in R_factors:
+        t_list = np.empty_like(b_list)
+        chi_list = np.empty_like(b_list)
+        for i, bi in enumerate(b_list):
+            R = kin.cpp_kingas.get_R(1, T, g, bi) * (1 + Rf) / (1 + 1e-5)
+            t_list[i] = kin.cpp_kingas.theta(1, T, R, g, bi, 50)
+        for i in range(len(b_list)):
+            chi_list[i] = kin.cpp_kingas.chi(1, T, g, b_list[i]) # np.pi - 2 * (t_list[i] - t_list[-1] + np.pi / 2)#
+        plt.plot(b_list / sigma, t_list / np.pi, color=cmap(norm(Rf)), label=r'$\theta$')
+        plt.plot(b_list / sigma, chi_list / np.pi, color=cmap(norm(Rf)), label=r'$\chi$')
+    plt.plot(b_list / sigma, np.ones_like(b_list) * 0.5, linestyle='--', color='black')
+    plt.plot(b_list / sigma, np.zeros_like(b_list), linestyle='--', color='black')
+    plt.legend()
+    plt.xlabel(r'$b$ [$\sigma$]')
+    plt.ylabel(r'$\theta$ [$\pi$]')
+    plt.show()
+
+plot_theta_av_b(1, 15)
+>>>>>>> chi_integral
 #plot_theta()

@@ -3,7 +3,7 @@ from pyctp import saftvrmie
 import scipy.linalg as lin
 from scipy.constants import Boltzmann, Avogadro
 from scipy.integrate import quad
-from pykingas.KineticGas import cpp_KineticGas
+from pykingas import cpp_KineticGas
 import warnings
 
 FLT_EPS = 1e-12

@@ -9,7 +9,7 @@ sigma = kin.sigma_ij[0, 0]
 func = lambda r: kin.cpp_kingas.get_R_rootfunc(1, T, g, b, r)
 derivative = lambda r: kin.cpp_kingas.get_R_rootfunc_derivative(1, T, g, b, r)
 
-T, g, b = 300, 1e-5, 2.6 * sigma
+T, g, b = 300, 2, 0 * sigma
 
 r_list = np.linspace(0.99 * sigma, 4 * sigma, 100)
 func_list = np.empty_like(r_list)
