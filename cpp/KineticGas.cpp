@@ -537,10 +537,25 @@ double KineticGas::mie_potential_dblderivative_rr(int ij, double r, double theta
 
 #pragma region // Helper funcions for computing dimentionless collision integrals
 
-double KineticGas::theta(const int ij, const double T, const double r_prime, const double g, const double b){
+double KineticGas::theta(const int ij, const double T, const double g, const double b){
+    if (b / sigma_map[ij] > 10) return PI / 2;
+    double R = get_R(ij, T, g, b);
+    return theta_integral(ij, T, R, g, b) - theta_lim(ij, T, g) + PI / 2;
+}
+
+double KineticGas::theta_lim(const int ij, const double T, const double g){
+    double b = 10 * sigma_map[ij];
+    double R = get_R(ij, T, g, b);
+    return theta_integral(ij, T, R, g, b);
+}
+
+double KineticGas::theta_integral(const int ij, const double T, const double R, const double g, const double b){
+
+    double lower_cutoff_factor = 1e-7;
+    double r_prime = (1 + lower_cutoff_factor) * R;
 
     double step_eps_tol = 1e-6; // Absolute Error tolerance in each integration step
-    double rel_eps_tol = 1e-4; // Relative error tolerance for total integration
+    double rel_eps_tol = 1e-3; // Relative error tolerance for total integration
     double abs_eps_tot; // Total absolute error
 
     double total_integral;
@@ -611,11 +626,20 @@ double KineticGas::theta(const int ij, const double T, const double r_prime, con
 
         } while (integral_09 < convergence_threshold * total_integral);
 
-        step_eps_tol *= 0.5;
+        if (isnan(total_integral) || isinf(total_integral)){
+            lower_cutoff_factor *= 10;
+            r_prime = (1 + lower_cutoff_factor) * R;
+            total_integral = 1;
+            abs_eps_tot = rel_eps_tol + 1; // Ensure that the loop continues
+        }
+        else{
+            step_eps_tol *= 0.5;
+        }
         #ifdef DEBUG
             if (abs_eps_tot / total_integral > rel_eps_tol){
                 std::printf("Relative error is less than %E, Tolerance is %E\n", abs_eps_tot / total_integral, rel_eps_tol);
-                std::printf("Reducing step tolerance to %E\n\n", step_eps_tol);
+                std::printf("Reducing step tolerance to %E\n", step_eps_tol);
+                std::printf("Lower cutoff factor is %E\n\n", lower_cutoff_factor);
             }
         #endif
 
@@ -629,7 +653,7 @@ double KineticGas::theta(const int ij, const double T, const double r_prime, con
 
     #ifdef DEBUG
         std::printf("For b = %E sigma, g = %E\n", b / sigma_map[ij], g);
-        std::printf("start, end (sigma) = %E, %E\n", r_prime / sigma_map[ij], r2 / sigma_map[ij]);
+        std::printf("init, start, end (sigma) = %E, %E, %E\n", R / sigma_map[ij], r_prime / sigma_map[ij], r2 / sigma_map[ij]);
         std::printf("Total gridpoints = %i\n", N_total_integration_steps);
         std::printf("Computed theta = %E pi\n", total_integral / PI);
         std::printf("Relative error is less than %E %%, tolerance is %E %% \n\n", 100 * abs_eps_tot / total_integral, 100 * rel_eps_tol);
@@ -705,22 +729,14 @@ double KineticGas::get_R(int ij, double T, double g, double b){
         std::printf("For b = %E sigma, g = %E\n", b / sigma_map[ij], g);
         std::printf("Found R at %E sigma\n\n", next_r / sigma_map[ij]);
     #endif
-    return next_r * (1 + 1e-5);
+    return next_r;
 }
 
 double KineticGas::chi(int ij, double T, double g, double b){
-    const double b_cutoff = 10.0 * sigma_map[ij];
-    double R_lim = get_R(ij, T, g, b_cutoff);
-    double R = get_R(ij, T, g, b);
-    double theta_lim = theta(ij, T, R_lim, g, b_cutoff);
-    double theta_val = theta(ij, T, R, g, b);
-
-    double val;
-    if (abs(theta_val - theta_lim) < FLTEPS) val = 0.0;
-    else val = PI - 2.0 * (theta_val);// - theta_lim + (PI / 2.0));
+    if (b / sigma_map[ij] > 10) return 0;
+    double t = theta(ij, T, g, b);
+    double val = PI - 2.0 * t;
     #ifdef DEBUG
-        std::printf("Limiting theta : %E pi\n", theta_lim / PI);
-        std::printf("Theta : %E pi\n", theta_val / PI);
         std::printf("For b = %E sigma, g = %E\n", b / sigma_map[ij], g);
         std::printf("Computed chi = %E pi \n\n", val);
     #endif
