@@ -1,6 +1,6 @@
 .idea/
-cpp/release/
-cpp/debug/
+*/release/*
+*/debug/*
 python/venv
 venv/
 *__pycache__/
