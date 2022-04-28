@@ -4,6 +4,7 @@
 #include "pybind11/operators.h"
 #include <vector>
 #include <algorithm>
+#include <memory>
 
 #define FLTEPS 1e-12
 
@@ -51,25 +52,24 @@ double integrate(const Point& p1_in, const Point& p2_in, const Point& p3_in){
     }
 
 
-    Line l13 = get_line(*p1, *p3);
+    std::shared_ptr<Line> l_upper_1{new Line{get_line(*p1, *p3)} }; // y    p1 * * * * * * p3   // Assuming this configuration
+    std::shared_ptr<Line> l_lower_1{new Line{get_line(*p1, *p2)} }; // ^        *       *       // Swapping if y2 > y3
+    std::shared_ptr<Line> l_upper_2{l_upper_1};                     // |          *   *         //
+    std::shared_ptr<Line> l_lower_2{new Line{get_line(*p2, *p3)} }; //  => x     p2 *           //
+    
+    if (p3->y < p2->y){
+        std::swap(l_lower_1, l_upper_1);
+        std::swap(l_lower_2, l_upper_2);
+    }
+    
     double integral = 0;
-    if (abs(p1->x - p2->x) > FLTEPS){
+    if (abs(p1->x - p2->x) > FLTEPS){ // Integral from x1 to x2
 
-        Line l12 = get_line(*p1, *p2);
-        if (p3->y > p2->y){
-            Line l_upper = l13;
-            Line l_lower = l12;
-        }
-        else{
-            Line l_upper = l12;
-            Line l_lower = l13;
-        }
-
-        const double A31_star = l13.a - l12.a;
-        const double B31_star = l13.b - l12.b;
-        const double A31_dblstar = pow(l13.a, 2) - pow(l12.a, 2);
-        const double B31_dblstar = 2 * (l13.a * l13.b - l12.a * l12.b);
-        const double C31_dblstar = pow(l13.b, 2) - pow(l12.b, 2);
+        const double A31_star = l_upper_1->a - l_lower_1->a;
+        const double B31_star = l_upper_1->b - l_lower_1->b;
+        const double A31_dblstar = pow(l_upper_1->a, 2) - pow(l_lower_1->a, 2);
+        const double B31_dblstar = 2 * (l_upper_1->a * l_upper_1->b - l_lower_1->a * l_lower_1->b);
+        const double C31_dblstar = pow(l_upper_1->b, 2) - pow(l_lower_1->b, 2);
 
         const double A12_tilde = plane.A * A31_star + plane.B * A31_dblstar / 2;
         const double B12_tilde = plane.A * B31_star + plane.C * A31_star + plane.B * B31_dblstar / 2;
@@ -77,14 +77,13 @@ double integrate(const Point& p1_in, const Point& p2_in, const Point& p3_in){
 
         integral += (A12_tilde / 3) * (pow(p2->x, 3) - pow(p1->x, 3)) + (B12_tilde / 2) * (pow(p2->x, 2) - pow(p1->x, 2)) + C12_tilde * (p2->x - p1->x);
     }
-    if (abs(p2->x - p3->x) > FLTEPS){
-        Line l23 = get_line(*p2, *p3);
+    if (abs(p2->x - p3->x) > FLTEPS){ // Integral from x2 to x3
 
-        const double A23_star = l13.a - l23.a;
-        const double B23_star = l13.b - l23.b;
-        const double A23_dblstar = pow(l13.a, 2) - pow(l23.a, 2);
-        const double B23_dblstar = 2 * (l13.a * l13.b - l23.a * l23.b);
-        const double C23_dblstar = pow(l13.b, 2) - pow(l23.b, 2);
+        const double A23_star = l_upper_2->a - l_lower_2->a;
+        const double B23_star = l_upper_2->b - l_lower_2->b;
+        const double A23_dblstar = pow(l_upper_2->a, 2) - pow(l_lower_2->a, 2);
+        const double B23_dblstar = 2 * (l_upper_2->a * l_upper_2->b - l_lower_2->a * l_lower_2->b);
+        const double C23_dblstar = pow(l_upper_2->b, 2) - pow(l_lower_2->b, 2);
 
         const double A23_tilde = plane.A * A23_star + plane.B * A23_dblstar / 2;
         const double B23_tilde = plane.A * B23_star + plane.C * A23_star + plane.B * B23_dblstar / 2;
