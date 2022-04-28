@@ -77,6 +77,7 @@ class KineticGas{
     double get_R_rootfunc(int ij, double T, double g, double b, double& r);
     double get_R_rootfunc_derivative(int ij, double T, double g, double b, double& r);
     double chi(int ij, double T, double g, double b);
+    double w_integral_b(int ij, double T, double g); // TODO: Implementer denne!
 
     std::vector<std::vector<double>> get_A_matrix(
         double in_T,
