@@ -22,6 +22,7 @@ do
             cmake -DCMAKE_BUILD_TYPE=Debug ..
             make
             cd ../../..
+            DIR=/tmp; [ -d "$DIR" ] && rm -rf tmp
             mkdir tmp
             mv integration/Integration_d.so tmp/Integration_d.so
             cp cpp/Integration/debug/Integration_d.cpython-39-darwin.so integration/Integration_d.so
@@ -46,6 +47,7 @@ cmake -DCMAKE_BUILD_TYPE=Release  ..
 make
 cd ../../..
 
+DIR=/tmp; [ -d "$DIR" ] && rm -rf tmp
 mkdir tmp
 mv integration/Integration_r.so tmp/Integration_r.so
 cp cpp/Integration/release/Integration_r.cpython-39-darwin.so integration/Integration_r.so

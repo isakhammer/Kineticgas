@@ -22,6 +22,7 @@ do
             cmake -DCMAKE_BUILD_TYPE=Debug ..
             make
             cd ../..
+            DIR=/tmp; [ -d "$DIR" ] && rm -rf tmp
             mkdir tmp
             mv pykingas/KineticGas_d.so tmp/KineticGas_d.so
             cp cpp/debug/KineticGas_d.cpython-39-darwin.so pykingas/KineticGas_d.so
@@ -46,7 +47,7 @@ echo "Building Release"
 cmake -DCMAKE_BUILD_TYPE=Release  ..
 make
 cd ../..
-
+DIR=/tmp; [ -d "$DIR" ] && rm -rf tmp
 mkdir tmp
 mv pykingas/KineticGas_r.so tmp/KineticGas_r.so
 cp cpp/release/KineticGas_r.cpython-39-darwin.so pykingas/KineticGas_r.so
