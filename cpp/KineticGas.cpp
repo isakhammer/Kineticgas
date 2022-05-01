@@ -581,7 +581,9 @@ double KineticGas::theta_integral(const int ij, const double T, const double R, 
         integrand2 = theta_integrand(ij, T, r2, g, b);
         for (; N_total_integration_steps < 100; N_total_integration_steps++){ // Start by doing 100 integration steps
             r1 = r2;
-            delta_r = pow(12.0 * step_eps_tol / theta_integrand_dblderivative(ij, T, r1, g, b), 1.0 / 3.0); // Ensure error is less than tolerance
+            double d3tdr3 = theta_integrand_dblderivative(ij, T, r1, g, b);
+            double M = max(abs(d3tdr3), pow(0.1 * sigma_map[ij], 3) / (12.0 * step_eps_tol)); // Maximum step length is 0.1 * sigma
+            delta_r = pow(12.0 * step_eps_tol / M, 1.0 / 3.0); // Ensure error is less than tolerance in each step
             r2 = r1 + delta_r;
 
             integrand1 = integrand2;
@@ -591,7 +593,6 @@ double KineticGas::theta_integral(const int ij, const double T, const double R, 
             total_integral += A_coeff * (pow(r2, 2) - pow(r1, 2)) / 2 + B_coeff * (r2 - r1);
             abs_eps_tot += theta_integrand_dblderivative(ij, T, r1, g, b) * pow(r2 - r1, 3) / 12.0;
 
-            //N_total_integration_steps++;
         }
         int N_increment_points;
         do{ // Compute integral, continue until convergence
@@ -629,7 +630,8 @@ double KineticGas::theta_integral(const int ij, const double T, const double R, 
 
         } while (integral_09 < convergence_threshold * total_integral);
 
-        if (isnan(total_integral) || isinf(total_integral)){
+        if ((isnan(total_integral) || isinf(total_integral))){
+            if (lower_cutoff_factor > 10) throw "Blææ!";
             lower_cutoff_factor *= 10;
             r_prime = (1 + lower_cutoff_factor) * R;
             total_integral = 1;
