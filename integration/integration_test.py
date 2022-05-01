@@ -128,158 +128,212 @@ def test_integrate(do_plot=False):
 def expfun(x, y):
     return np.exp(-(((x-3)/2)**2 + (y-5)**2))
 
+def expfun_derx(x, y):
+    return - ((x - 3) / 2) * expfun(x, y)
 
-kin = KineticGas('AR,C1')
+def expfun_dery(x, y):
+    return - 2 * (y - 5) * expfun(x, y)
+
+def expfun_dblder(x, y):
+    return expfun(x, y) * (((x - 3) / 2)**2 + 4 * (y - 5)**2 - 5 / 2)
+
+kin = KineticGas('AR,C1', potential='mie')
 sigma = kin.sigma_ij[0, 0]
 T = 300
-def kinfun(g, b, r, l):
-    return np.exp(- g ** 2) * g ** (2 * r + 3) * (1 - np.cos(kin.cpp_kingas.chi(1, T, g, b * sigma)) ** l) * (b / sigma)
+N_EVAL = 0
+def kinfun(g, b, r=2, l=6):
+    global N_EVAL
+    N_EVAL += 1
+    return np.exp(- g ** 2) * g ** (2 * r + 3) * (1 - np.cos(kin.cpp_kingas.chi(1, T, g, b * sigma)) ** l) * b
 
 
-def py_mesh(origin, end, dx, dy, Nxsteps, Nysteps, func, subdomain=False, prev_eval_points=None):
+def py_mesh(origin, end, dx, dy, Nxsteps, Nysteps, func, subdomainlimit, f_subdomainlimit, subdomain=False, prev_eval_points=None):
+    print('Meshing at :', origin[0], origin[2])
     eval_points = {}
     if prev_eval_points is not None:
         for k, v in prev_eval_points.items():
             eval_points[k] = v
 
+    def eval_func(x, y, Nx, Ny):
+        if (Nx, Ny) in eval_points.keys():
+            return eval_points[(Nx, Ny)]
+        else:
+            f = func(x, y)
+            eval_points[(Nx, Ny)] = f
+            return f
+
+    def step(x, y, Nx, Ny):
+
+        d2fdy2 = (eval_func(x, y + 2 * dy * Nysteps, Nx, Ny + 2 * Nysteps) - 2 * eval_func(x, y + dy * Nysteps, Nx, Ny + Nysteps) + eval_func(x, y, Nx, Ny)) / (dy * Nysteps)**2
+        d2fdx2 = (eval_func(x + 2 * dx * Nxsteps, y, Nx + 2 * Nxsteps, Ny) - 2 * eval_func(x + dx * Nxsteps, y, Nx + Nxsteps, Ny) + eval_func(x, y, Nx, Ny)) / (dx * Nxsteps)**2
+        f = eval_func(x, y, Nx, Ny)
+        if (abs(d2fdx2) + abs(d2fdy2) > subdomainlimit or f > f_subdomainlimit) and (abs(Nxsteps) > 1 and abs(Nysteps) > 1):
+            sub_origin = (x, Nx, y, Ny)
+            sub_Nxsteps = Nxsteps // 2
+            sub_Nysteps = Nysteps // 2
+            sub_end = (Nx + Nxsteps, Ny + Nysteps)
+            sub_subdomainlimit = subdomainlimit * 2
+            sub_f_subdomainlimit = f_subdomainlimit * 2
+            subx, suby, subeval = py_mesh(sub_origin,
+                                          sub_end,
+                                          dx, dy, sub_Nxsteps, sub_Nysteps, func,
+                                          sub_subdomainlimit, sub_f_subdomainlimit,
+                                          subdomain=True,
+                                          prev_eval_points=eval_points)
+
+            for k, v in subeval.items():
+                eval_points[k] = v
+            xlist.extend(subx)
+            ylist.extend(suby)
+
+            x += dx * Nxsteps
+            Nx += Nxsteps
+            xlist.append(x)
+            ylist.append(y)
+            return x, y, Nx, Ny
+
+        y += dy * Nysteps
+        Ny += Nysteps
+        xlist.append(x)
+        ylist.append(y)
+
+        y -= dy * Nysteps
+        Ny -= Nysteps
+        x += dx * Nxsteps
+        Nx += Nxsteps
+        xlist.append(x)
+        ylist.append(y)
+
+        return x, y, Nx, Ny
 
     xlist = []
     ylist = []
-    subdomainlimit = 0.2
     x, origin_Nx, y, origin_Ny = origin
+
     Nx, Ny = origin_Nx, origin_Ny
     xend, yend = end
-    xlist.append(x)
-    ylist.append(y)
-    f = func(x, y)
-    eval_points[(Nx, Ny)] = f
 
-    def ystep(x, y, Nx, Ny):
-        xlist.append(x)
-        ylist.append(y)
-        if (Nx, Ny) in eval_points.keys():
-            f = eval_points[(Nx, Ny)]
-        else:
-            f = func(x, y)
-            eval_points[(Nx, Ny)] = f
-
-        if f > subdomainlimit and Nxsteps > 1 and Nysteps > 1:
-            sub_origin = (x, Nx, y - dy * Nysteps, Ny - Nysteps)
-            sub_Nxsteps = Nxsteps // 2
-            sub_Nysteps = Nysteps // 2
-            sub_end = (Nx + 3 * sub_Nxsteps, Ny + 3 * sub_Nysteps)
-            subx, suby, subeval = py_mesh(sub_origin,
-                                          sub_end,
-                                          dx, dy, sub_Nxsteps, sub_Nysteps, func,
-                                          subdomain=True,
-                                          prev_eval_points=eval_points)
-            for k, v in subeval.items():
-                eval_points[k] = v
-            xlist.extend(subx)
-            ylist.extend(suby)
-            x += dx * Nxsteps
-            Nx += Nxsteps
-
-    def xstep(x, y, Nx, Ny):
-        xlist.append(x)
-        ylist.append(y)
-        if (Nx, Ny) in eval_points.keys():
-            f = eval_points[(Nx, Ny)]
-        else:
-            f = func(x, y)
-            eval_points[(Nx, Ny)] = f
-
-        if f > subdomainlimit and Nxsteps > 1 and Nysteps > 1:
-            sub_origin = (x - dx * Nxsteps, Nx - Nxsteps, y + dy * Nysteps, Ny + Nysteps)
-            sub_Nxsteps = Nxsteps // 2
-            sub_Nysteps = Nysteps // 2
-            sub_end = (Nx + 3 * sub_Nxsteps, Ny + 3 * sub_Nysteps)
-            subx, suby, subeval = py_mesh(sub_origin,
-                                          sub_end,
-                                          dx, dy, sub_Nxsteps, sub_Nysteps, func,
-                                          subdomain=True,
-                                          prev_eval_points=eval_points)
-            for k, v in subeval.items():
-                eval_points[k] = v
-            xlist.extend(subx)
-            ylist.extend(suby)
-            x += dx * Nxsteps
-            Nx += Nxsteps
-
-
-    y += dy * Nysteps
-    Ny += Nysteps
-    ystep(x, y, Nx, Ny)
-    x += dx * Nxsteps
-    Nx += Nxsteps
-    y -= dy * Nysteps
-    Ny -= Nysteps
-    ystep(x, y, Nx, Ny)
+    x, y, Nx, Ny = step(x, y, Nx, Ny)
     while Ny < yend:
-        prev_Nx = Nx
-        while origin_Nx < Nx < xend:
-            y += dy * Nysteps
-            Ny += Nysteps
-            ystep(x, y, Nx, Ny)
 
-            x += dx * Nxsteps
-            Nx += Nxsteps
-            y -= dy * Nysteps
-            Ny -= Nysteps
-            xstep(x, y, Nx, Ny)
+        while origin_Nx < Nx < xend or xend < Nx < origin_Nx:
+            x, y, Nx, Ny = step(x, y, Nx, Ny)
 
-        if Nx == prev_Nx:
-            y += dy * Nysteps
-            Ny += Nysteps
-            ystep(x, y, Nx, Ny)
-            if Ny < yend:
-                y += dy * Nysteps
-                Ny += Nysteps
-                ystep(x, y, Nx, Ny)
-
-                Nxsteps *= -1
-
-                x += dx * Nxsteps
-                Nx += Nxsteps
-                y -= dy * Nysteps
-                Ny -= Nysteps
-                xstep(x, y, Nx, Ny)
+        y += dy * Nysteps
+        Ny += Nysteps
+        xlist.append(x)
+        ylist.append(y)
+        if Ny < yend:
+            Nxsteps *= -1
+            x, y, Nx, Ny = step(x, y, Nx, Ny)
 
     return deepcopy(xlist), deepcopy(ylist), eval_points
 
 #x, y, points = py_mesh((0, 0, 0, 0), (40, 40), 0.25, 0.25, 4, 4, kinfun)
 #print('got points!')
 #plt.plot(x, y, linestyle='', marker='.')
-g_grid = np.linspace(1e-3, 7.5)
-b_grid = np.linspace(0.2, 10)
-g_grid, b_grid = np.meshgrid(g_grid, b_grid)
-
-def get_Z(r, l):
+def get_Z(g_grid, b_grid, r, l):
     Z = np.empty_like(g_grid)
     for gi, g in enumerate(g_grid):
         for bi, b in enumerate(b_grid):
-            Z[gi, bi] = kinfun(b_grid[gi, bi], b_grid[gi, bi], r, l)
+            #print(gi, g_grid[gi, bi], bi, b_grid[gi, bi])
+            Z[gi, bi] = kinfun(g_grid[gi, bi], b_grid[gi, bi], r, l)
+    return Z
+
+def plot_cmaps():
+    g_grid = np.linspace(0.3, 5, 30)
+    b_grid = np.linspace(0.25, 2.5, 30)
+    g_grid, b_grid = np.meshgrid(g_grid, b_grid)
+    x_grid, y_grid = np.meshgrid(np.linspace(0, 10), np.linspace(0, 10))
+
+    fig, axs = plt.subplots(2, 4, gridspec_kw={'width_ratios':[1, 0.1, 1, 0.1]})
+
+    for i, row in enumerate(axs):
+        for j in range(0, len(row), 2):
+            r = 2 * i + 2
+            l = 2 * j + 2
+            Z = get_Z(g_grid, b_grid, r, l)
+            maxZ = max(Z.flatten())
+            im = row[j].pcolormesh(g_grid, b_grid, Z)
+            plt.colorbar(im, cax=row[j + 1])
+            #row[j].set_title(round(maxZ, 2))
+
+    axs[1, 0].set_xlabel(r'$g$ [-]')
+    axs[1, 2].set_xlabel(r'$g$ [-]')
+    axs[0, 0].set_ylabel(r'$b$ [$\sigma$]')
+    axs[1, 0].set_ylabel(r'$b$ [$\sigma$]')
+    plt.show()
+
+def plot_contour(test=False):
+    g_grid = np.linspace(0.3, 5, 30)
+    b_grid = np.linspace(0.25, 2.5, 30)
+    g_grid, b_grid = np.meshgrid(g_grid, b_grid)
+
+    x_grid, y_grid = np.meshgrid(np.linspace(0, 10), np.linspace(0, 10))
+
+    fig, axs = plt.subplots(1, 2, gridspec_kw={'width_ratios':[1, 0.1]})
+    #x, y, points = py_mesh((0.3, 0, 0.25, 0), # Origin
+    #                       (50, 40), # Max steps (Nx, Ny)
+    #                       0.25 / 4, 0.2 / 4, # dx, dy
+    #                       4, 4, # Nxsteps, Nysteps
+    #                       expfun, 0.2)
 
 
-fig, axs = plt.subplots(2, 4, gridspec_kw={'width_ratios':[1, 0.1, 1, 0.1]})
 
-for i, row in enumerate(axs):
-    for j in range(0, len(row), 2):
-        r = 2 * i + 2
-        l = 2 * j + 2
-        Z = get_Z(r, l)
-        maxZ = max(Z.flatten())
-        print(maxZ)
-        im = row[j].pcolormesh(g_grid, b_grid, Z)
-        plt.colorbar(im, cax=row[j + 1])
-        row[j].set_title(round(maxZ, 2))
+    Z = expfun(x_grid, y_grid)  # get_Z(g_grid, b_grid, 2, 6)
+    im = axs[0].contour(x_grid, y_grid, Z)
+    plt.colorbar(im, cax=axs[1])
 
-axs[1, 0].set_xlabel(r'$g$ [-]')
-axs[1, 2].set_xlabel(r'$g$ [-]')
-axs[0, 0].set_ylabel(r'$b$ [$\sigma$]')
-axs[1, 0].set_ylabel(r'$b$ [$\sigma$]')
+    x, y, points = py_mesh((0, 0, 0, 0),
+                           (45, 45),
+                           0.2, 0.2,
+                           4, 4,
+                           expfun, 0.2)
+
+    colors=['r', 'b', 'g', 'black']
+    j = 0
+    for i in range(len(x)-2):
+        axs[0].plot(x[i:i+2], y[i:i+2], linestyle='-', marker='.', color=colors[j], markersize=8)
+        j += 1
+        if j > 3:
+            j = 0
+    plt.show()
+
+def plot_mesh(projection='2d', test=False):
+    if test is True:
+        x, y, points = py_mesh((0, 0, 0, 0),
+                               (40, 40),
+                               0.2, 0.2,
+                               4, 4,
+                               expfun, 0.6, 0.4)
+        fun = expfun
+
+    else:
+        x, y, points = py_mesh((0.3, 0, 0.25, 0), (40, 20), 0.5 / 4, 0.5 / 4, 4, 4, kinfun, 0.2, 100)
+        fun = kinfun
+    if projection == '3d':
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.scatter(x, y, [fun(xi, yi) for xi, yi in zip(x, y)], marker='.')
+        plt.show()
+    else:
+        plt.plot(x, y, linestyle='', marker='.', color='r')
+
+
+#fig = plt.figure()
+#ax = fig.add_subplot(111, projection='3d')
+fig, axs = plt.subplots(1, 2, gridspec_kw={'width_ratios' : [1, 0.1]})
+g_grid, b_grid = np.meshgrid(np.linspace(0.3, 5), np.linspace(0.25, 2.5))
+plt.sca(axs[0])
+im = plt.pcolormesh(g_grid, b_grid, get_Z(g_grid, b_grid, 2, 6))
+plt.colorbar(im, cax=axs[1])
 plt.show()
+#plt.contour(xgrid, ygrid, expfun_dblder(xgrid, ygrid))
 
+plot_mesh(projection='2d', test=False)
+
+#plot_contour(test=True)
+#plot_contour()
 #test_plane()
 #test_integrate(do_plot=True)
 #test_line()
