@@ -5,6 +5,7 @@ plt.style.use('default')
 from scipy.integrate import dblquad
 from copy import deepcopy
 from pykingas import KineticGas
+import time
 
 if '-debug' in sys.argv or '-Debug' in sys.argv or '-d' in sys.argv:
     from integration import Integration_d as I
@@ -126,7 +127,7 @@ def test_integrate(do_plot=False):
     return 0, 0
 
 def expfun(x, y):
-    return np.exp(-(((x-3)/2)**2 + (y-5)**2))
+    return np.exp(- 0.5 * ((x-5)**2 + (y-5)**2))
 
 def expfun_derx(x, y):
     return - ((x - 3) / 2) * expfun(x, y)
@@ -137,18 +138,28 @@ def expfun_dery(x, y):
 def expfun_dblder(x, y):
     return expfun(x, y) * (((x - 3) / 2)**2 + 4 * (y - 5)**2 - 5 / 2)
 
+def g_integrand(L, r):
+    if r == 0:
+        return np.exp(- L) * (L**2 + 1)
+    else:
+        return np.exp(- L) * (L**2) ** (r + 1) + (r + 1) * g_integrand(L, r - 1)
+
 kin = KineticGas('AR,C1', potential='mie')
 sigma = kin.sigma_ij[0, 0]
 T = 300
 N_EVAL = 0
+TOT_TIME = 0
 def kinfun(g, b, r=2, l=6):
-    global N_EVAL
+    global N_EVAL, TOT_TIME
     N_EVAL += 1
-    return np.exp(- g ** 2) * g ** (2 * r + 3) * (1 - np.cos(kin.cpp_kingas.chi(1, T, g, b * sigma)) ** l) * b
+    t0 = time.process_time()
+    val = np.exp(- g ** 2) * g ** (2 * r + 3) * (1 - np.cos(kin.cpp_kingas.chi(1, T, g, b * sigma)) ** l) * b
+    t1 = time.process_time()
+    TOT_TIME += t1 - t0
+    return val
 
 
 def py_mesh(origin, end, dx, dy, Nxsteps, Nysteps, func, subdomainlimit, f_subdomainlimit, subdomain=False, prev_eval_points=None):
-    print('Meshing at :', origin[0], origin[2])
     eval_points = {}
     if prev_eval_points is not None:
         for k, v in prev_eval_points.items():
@@ -165,7 +176,7 @@ def py_mesh(origin, end, dx, dy, Nxsteps, Nysteps, func, subdomainlimit, f_subdo
     def step(x, y, Nx, Ny):
 
         d2fdy2 = (eval_func(x, y + 2 * dy * Nysteps, Nx, Ny + 2 * Nysteps) - 2 * eval_func(x, y + dy * Nysteps, Nx, Ny + Nysteps) + eval_func(x, y, Nx, Ny)) / (dy * Nysteps)**2
-        d2fdx2 = (eval_func(x + 2 * dx * Nxsteps, y, Nx + 2 * Nxsteps, Ny) - 2 * eval_func(x + dx * Nxsteps, y, Nx + Nxsteps, Ny) + eval_func(x, y, Nx, Ny)) / (dx * Nxsteps)**2
+        d2fdx2 = (eval_func(x + 2 * dx * abs(Nxsteps), y, Nx + 2 * abs(Nxsteps), Ny) - 2 * eval_func(x + dx * abs(Nxsteps), y, Nx + abs(Nxsteps), Ny) + eval_func(x, y, Nx, Ny)) / (dx * abs(Nxsteps))**2
         f = eval_func(x, y, Nx, Ny)
         if (abs(d2fdx2) + abs(d2fdy2) > subdomainlimit or f > f_subdomainlimit) and (abs(Nxsteps) > 1 and abs(Nysteps) > 1):
             sub_origin = (x, Nx, y, Ny)
@@ -228,6 +239,126 @@ def py_mesh(origin, end, dx, dy, Nxsteps, Nysteps, func, subdomainlimit, f_subdo
             x, y, Nx, Ny = step(x, y, Nx, Ny)
 
     return deepcopy(xlist), deepcopy(ylist), eval_points
+
+def getpoints(x, y, z):
+    return [I.Point(x[i], y[i], z[i]) for i in range(len(x))]
+
+def py_integrate(origin, end, dx, dy, Nxsteps, Nysteps, func, subdomainlimit, f_subdomainlimit, subdomain=False, prev_eval_points=None):
+    eval_points = {}
+    if prev_eval_points is not None:
+        for k, v in prev_eval_points.items():
+            eval_points[k] = v
+
+    def eval_func(x, y, Nx, Ny):
+        if (Nx, Ny) in eval_points.keys():
+            return eval_points[(Nx, Ny)]
+        else:
+
+            f = func(x, y)
+            eval_points[(Nx, Ny)] = f
+            return f
+
+    def step(x, y, Nx, Ny, integral):
+
+        x, y = xlist[2], ylist[2]
+
+        d2fdy2 = (eval_func(x, y + 2 * dy * Nysteps, Nx, Ny + 2 * Nysteps) - 2 * eval_func(x, y + dy * Nysteps, Nx, Ny + Nysteps) + eval_func(x, y, Nx, Ny)) / (dy * Nysteps)**2
+        d2fdx2 = (eval_func(x + 2 * dx * Nxsteps, y, Nx + 2 * Nxsteps, Ny) - 2 * eval_func(x + dx * Nxsteps, y, Nx + Nxsteps, Ny) + eval_func(x, y, Nx, Ny)) / (dx * Nxsteps)**2
+        f = eval_func(x, y, Nx, Ny)
+        if (abs(d2fdx2) + abs(d2fdy2) > subdomainlimit or f > f_subdomainlimit) and (abs(Nxsteps) > 1 and abs(Nysteps) > 1):
+            sub_origin = (x, Nx, y, Ny)
+            sub_Nxsteps = Nxsteps // 2
+            sub_Nysteps = Nysteps // 2
+            sub_end = (Nx + Nxsteps, Ny + Nysteps)
+            sub_subdomainlimit = subdomainlimit * 2
+            sub_f_subdomainlimit = f_subdomainlimit * 2
+            subintegral, subeval = py_integrate(sub_origin,
+                                                  sub_end,
+                                                  dx, dy, sub_Nxsteps, sub_Nysteps, func,
+                                                  sub_subdomainlimit, sub_f_subdomainlimit,
+                                                  subdomain=True,
+                                                  prev_eval_points=eval_points)
+
+            for k, v in subeval.items():
+                eval_points[k] = v
+            integral += subintegral
+
+            x += dx * Nxsteps
+            Nx += Nxsteps
+            xlist[0] = x
+            xlist[1] = x
+            xlist[2] = x
+            ylist[0] = y
+            ylist[1] = y
+            ylist[2] = y
+            f = eval_func(xlist[2], ylist[2], Nx, Ny)
+            zlist[0] = f
+            zlist[1] = f
+            zlist[2] = f
+            return x, y, Nx, Ny, integral
+
+        ylist[0] = ylist[1]
+        ylist[1] = ylist[2]
+        ylist[2] += dy * Nysteps
+        Ny += Nysteps
+        zlist[0] = zlist[1]
+        zlist[1] = zlist[2]
+        zlist[2] = eval_func(xlist[2], ylist[2], Nx, Ny)
+        xlist[0] = xlist[1]
+        xlist[1] = xlist[2]
+        points = getpoints(xlist, ylist, zlist)
+        integral += I.integrate(points[0], points[1], points[2])
+
+        xlist[0] = xlist[1]
+        xlist[1] = xlist[2]
+        xlist[2] += dx * Nxsteps
+        Nx += Nxsteps
+
+        ylist[0] = ylist[1]
+        ylist[1] = ylist[2]
+        ylist[2] -= dy * Nysteps
+        Ny -= Nysteps
+
+        zlist[0] = zlist[1]
+        zlist[1] = zlist[2]
+        zlist[2] = eval_func(xlist[2], ylist[2], Nx, Ny)
+
+        points = getpoints(xlist, ylist, zlist)
+        integral += I.integrate(points[0], points[1], points[2])
+
+        return x, y, Nx, Ny, integral
+
+    integral = 0
+    x, origin_Nx, y, origin_Ny = origin
+
+    Nx, Ny = origin_Nx, origin_Ny
+    Nx_end, Ny_end = end
+    xlist = [x, x, x]
+    ylist = [y, y, y]
+    f = eval_func(x, y, Nx, Ny)
+    zlist = [f, f, f]
+    x, y, Nx, Ny, integral = step(x, y, Nx, Ny, integral)
+    while Ny < Ny_end:
+
+        while origin_Nx < Nx < Nx_end or Nx_end < Nx < origin_Nx:
+            x, y, Nx, Ny, integral = step(x, y, Nx, Ny, integral)
+
+        ylist[0] = ylist[1]
+        ylist[1] = ylist[2]
+        ylist[2] += dy * Nysteps
+        Ny += Nysteps
+        zlist[0] = zlist[1]
+        zlist[1] = zlist[2]
+        zlist[2] = eval_func(xlist[2], ylist[2], Nx, Ny)
+        xlist[0] = xlist[1]
+        xlist[1] = xlist[2]
+        points = getpoints(xlist, ylist, zlist)
+        integral += I.integrate(points[0], points[1], points[2])
+        if Ny < Ny_end:
+            Nxsteps *= -1
+            x, y, Nx, Ny, integral = step(x, y, Nx, Ny, integral)
+
+    return integral, eval_points
 
 #x, y, points = py_mesh((0, 0, 0, 0), (40, 40), 0.25, 0.25, 4, 4, kinfun)
 #print('got points!')
@@ -300,16 +431,23 @@ def plot_contour(test=False):
     plt.show()
 
 def plot_mesh(projection='2d', test=False):
+    global N_EVAL, TOT_TIME
     if test is True:
         x, y, points = py_mesh((0, 0, 0, 0),
                                (40, 40),
                                0.2, 0.2,
                                4, 4,
                                expfun, 0.6, 0.4)
+
         fun = expfun
 
     else:
-        x, y, points = py_mesh((0.3, 0, 0.25, 0), (40, 20), 0.5 / 4, 0.5 / 4, 4, 4, kinfun, 0.2, 100)
+        N_EVAL, TOT_TIME = 0, 0
+        x, y, points = py_mesh((0.1, 0, 0.1, 0), (50, 30), 0.35 / 4, 0.35 / 4, 4, 4, kinfun, 1, 100)
+        n_eval = N_EVAL
+        tot_time = TOT_TIME
+        print('Meshing required', N_EVAL, 'evaluations to generate', len(x), 'mesh points.')
+        print('Average evaluation time was :', TOT_TIME / N_EVAL)
         fun = kinfun
     if projection == '3d':
         fig = plt.figure()
@@ -319,18 +457,65 @@ def plot_mesh(projection='2d', test=False):
     else:
         plt.plot(x, y, linestyle='', marker='.', color='r')
 
+def test_meshed_integral(projection='2d', test=False):
+    global N_EVAL, TOT_TIME
+    if test is True:
+        integral, points = py_integrate((0, 0, 0, 0),
+                           (100, 100),
+                           0.1, 0.1,
+                           4, 4,
+                           expfun, 0.6, 0.4)
+
+        x = []
+        y = []
+        z = []
+        for k, v in points.items():
+            x.append(k[0] * 0.2)
+            y.append(k[1] * 0.2)
+            z.append(v)
+
+    else:
+        N_EVAL, TOT_TIME = 0, 0
+        integral, points = py_integrate((0.1, 0, 0.1, 0), (50, 30), 0.35 / 4, 0.35 / 4, 4, 4, kinfun, 1, 100)
+        n_eval = N_EVAL
+        tot_time = TOT_TIME
+        x = []
+        y = []
+        z = []
+        for k, v in points.items():
+            x.append(k[0] * 0.2)
+            y.append(k[1] * 0.2)
+            z.append(v)
+        print('Meshing required', N_EVAL, 'evaluations to generate', len(x), 'mesh points.')
+        print('Average evaluation time was :', TOT_TIME / N_EVAL)
+    if projection == '3d':
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.scatter(x, y, z, marker='.')
+        print('Integral is :', integral)
+        if test is True:
+            a = -np.log(expfun(6, 5))
+            print('Exact integral (-inf, inf) is',round(1 / a, 1),'pi. Numeric integral is', integral / np.pi, 'pi')
+        plt.show()
+    else:
+        plt.plot(x, y, linestyle='', marker='.', color='r')
 
 #fig = plt.figure()
 #ax = fig.add_subplot(111, projection='3d')
-fig, axs = plt.subplots(1, 2, gridspec_kw={'width_ratios' : [1, 0.1]})
-g_grid, b_grid = np.meshgrid(np.linspace(0.3, 5), np.linspace(0.25, 2.5))
-plt.sca(axs[0])
-im = plt.pcolormesh(g_grid, b_grid, get_Z(g_grid, b_grid, 2, 6))
-plt.colorbar(im, cax=axs[1])
-plt.show()
-#plt.contour(xgrid, ygrid, expfun_dblder(xgrid, ygrid))
+#fig, axs = plt.subplots(1, 2, gridspec_kw={'width_ratios' : [1, 0.1]})
+#g_grid, b_grid = np.meshgrid(np.linspace(0.3, 5), np.linspace(0.25, 2.5))
+#plt.sca(axs[0])
 
-plot_mesh(projection='2d', test=False)
+
+test_meshed_integral(projection='3d', test=False)
+plt.show()
+#im = plt.pcolormesh(g_grid, b_grid, get_Z(g_grid, b_grid, 2, 6))
+#plt.colorbar(im, cax=axs[1])
+
+#plt.contour(xgrid, ygrid, expfun_dblder(xgrid, ygrid))
+#plt.sca(axs[0])
+
+#plt.show()
 
 #plot_contour(test=True)
 #plot_contour()
