@@ -29,6 +29,9 @@ double integrate(const Point& p1_in, const Point& p2_in, const Point& p3_in){
     const Point* p1 = &p1_in;
     const Point* p2 = &p2_in;
     const Point* p3 = &p3_in;
+    if ((p1->x == p2->x) && (p1->x == p3->x)){
+        return 0;
+    }
     const Plane plane = get_plane(*p1, *p2, *p3);
     if ((p1->x <= p2->x) && (p1->x <= p3->x)){ // Hvis p1_in.x er minst ...
         if (p2->x > p3->x){
