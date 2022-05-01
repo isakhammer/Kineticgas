@@ -5,6 +5,7 @@
 #include <vector>
 #include <algorithm>
 #include <memory>
+#include <utility>
 
 #define FLTEPS 1e-12
 
@@ -25,7 +26,7 @@ Line get_line(const Point& p1, const Point& p2){
     return Line{A, B};
 }
 
-double integrate(const Point& p1_in, const Point& p2_in, const Point& p3_in){
+double integrate_plane(const Point& p1_in, const Point& p2_in, const Point& p3_in){
     const Point* p1 = &p1_in;
     const Point* p2 = &p2_in;
     const Point* p3 = &p3_in;
@@ -96,6 +97,52 @@ double integrate(const Point& p1_in, const Point& p2_in, const Point& p3_in){
     }
     return integral;
 
+}
+
+// Checks the map to see if the function has already been evaluated, in which case value is retrieved from the map.
+double eval_function(const Point& p, const int& Nx, const int& Ny,
+                        double (*func)(double, double),
+                        std::map<std::pair<int, int>, double>& evaluated_points){
+        std::pair<int, int> pos{Nx, Ny};
+        if (evaluated_points.find(pos) != evaluated_points.end()){
+            double val = func(p.x, p.y);
+            evaluated_points[pos] = val;
+            return val;
+        }
+        return evaluated_points[pos];
+}
+
+void integration_step(Point* p1, Point* p2, Point* p3, int& Nx, int& Ny, double& integral,
+                        const double& dx, const double& dy,
+                        const int& Nxsteps, const int& Nysteps,
+                        const double subdomain_dblder_limit,
+                        double (*func)(double, double),
+                        std::map<std::pair<int, int>, double>& evaluated_points){
+
+    double f = eval_function(*p3, Nx, Ny, func, evaluated_points);
+    double f1x = eval_function(*p3 + Point{dx * abs(Nxsteps), 0}, Nx + abs(Nxsteps), Ny, func, evaluated_points);
+    double f2x = eval_function(*p3 + Point{2 * dx * abs(Nxsteps), 0}, Nx + 2 * abs(Nxsteps), Ny, func, evaluated_points);
+    double f1y = eval_function(*p3 + Point{0, dy * abs(Nysteps)}, Nx, Ny + abs(Nysteps), func, evaluated_points);
+    double f2y = eval_function(*p3 + Point{0, 2 * dy * abs(Nysteps)}, Nx, Ny + 2 * abs(Nysteps), func, evaluated_points);
+    double d2fdx2 = (f - 2 * f1x + f2x) / pow(dx * Nxsteps, 2);
+    double d2fdy2 = (f - 2 * f1y + f2y) / pow(dy * Nysteps, 2);
+
+    if (abs(d2fdx2) + abs(d2fdy2) > subdomain_dblder_limit){ // Increase refinement
+
+    }
+
+}
+
+double integrate_adaptive(double x_origin, double y_origin,
+                            int Nx_origin, int Ny_origin,
+                            double x_end, double y_end,
+                            int Nx_end, int Ny_end,
+                            const int& Nxsteps, const int& Nysteps,
+                            const double subdomain_dblder_limit,
+                            std::map<std::pair<int, int>, double>& evaluated_points,
+                            double (*func)(double, double),
+                            double& second_derivative_limit){
+
 
 }
 
@@ -107,7 +154,7 @@ PYBIND11_MODULE(Integration_d, handle){
     handle.doc() = "Integration module";
     handle.def("get_plane", &get_plane);
     handle.def("get_line", &get_line);
-    handle.def("integrate", &integrate);
+    handle.def("integrate_plane", &integrate_plane);
 
     py::class_<Point>(handle, "Point")
         .def(py::init<double, double, double>())

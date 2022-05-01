@@ -1,10 +1,15 @@
 #pragma once
 #include <vector>
 
-struct Point{
+class Point{
+    public:
     const double x, y, z;
     Point(double x, double y) : x{x}, y{y}, z{0} {};
     Point(double x, double y, double z) : x{x}, y{y}, z{z} {};
+
+    Point operator+(const Point& rhs){
+        return Point{x + rhs.x, y + rhs.y, z + rhs.z};
+    }
 };
 
 struct Plane{
