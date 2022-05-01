@@ -631,7 +631,7 @@ double KineticGas::theta_integral(const int ij, const double T, const double R, 
         } while (integral_09 < convergence_threshold * total_integral);
 
         if ((isnan(total_integral) || isinf(total_integral))){
-            if (lower_cutoff_factor > 10) throw "Blææ!";
+            if (lower_cutoff_factor > 1e-2) throw "Something wrong...";
             lower_cutoff_factor *= 10;
             r_prime = (1 + lower_cutoff_factor) * R;
             total_integral = 1;
