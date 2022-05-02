@@ -315,11 +315,22 @@ double testfun(double x, double y){
     return exp(- (pow(x - 5, 2) + pow(y - 5, 2)));
 }
 
+double testfun_linear(double x, double y){
+    return x + y;
+}
+
 double integrator_test(double origin_x, double origin_y, double end_x, double end_y,
                        double dx, double dy, int refinement_levels, double subdomain_dblder_limit){
     Point origin{origin_x, origin_y}, end{end_x, end_y};
     double val = integrate2d(origin, end, dx, dy, refinement_levels, subdomain_dblder_limit, &testfun);
     double a = -log(testfun(1, 0));
+    return val;
+}
+
+double integrator_test_linear(double origin_x, double origin_y, double end_x, double end_y,
+                       double dx, double dy, int refinement_levels, double subdomain_dblder_limit){
+    Point origin{origin_x, origin_y}, end{end_x, end_y};
+    double val = integrate2d(origin, end, dx, dy, refinement_levels, subdomain_dblder_limit, &testfun_linear);
     return val;
 }
 
@@ -341,6 +352,7 @@ PYBIND11_MODULE(Integration_d, handle){
     handle.def("get_line", &get_line);
     handle.def("integrate_plane", &integrate_plane_py);
     handle.def("integrator_test", &integrator_test);
+    handle.def("integrator_test_linear", &integrator_test_linear);
     handle.def("mesh_test", &mesh_test);
 
     py::class_<Point>(handle, "Point")
