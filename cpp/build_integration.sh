@@ -26,6 +26,7 @@ do
             mkdir tmp
             mv integration/Integration_d.so tmp/Integration_d.so
             cp cpp/Integration/debug/Integration_d.cpython-39-darwin.so integration/Integration_d.so
+            python integration/integrator_unittests.py -d
             status=$?
             if [[ $status -eq 0 ]]; then
                 rm -rf tmp
@@ -51,6 +52,7 @@ DIR=/tmp; [ -d "$DIR" ] && rm -rf tmp
 mkdir tmp
 mv integration/Integration_r.so tmp/Integration_r.so
 cp cpp/Integration/release/Integration_r.cpython-39-darwin.so integration/Integration_r.so
+python integration/integrator_unittests.py
 status=$?
 if [[ $status -eq 0 ]]; then
     rm -rf tmp
