@@ -4,6 +4,7 @@
 #include <memory>
 #include <utility>
 #include <map>
+#include <iostream>
 
 class Point{
     public:
@@ -36,29 +37,37 @@ double integrate_plane_py(const Point& p1, const Point& p2, const Point& p3); //
 double integrate_plane(std::shared_ptr<const Point> p1, std::shared_ptr<const Point> p2, std::shared_ptr<const Point> p3);
 double eval_function(std::shared_ptr<Point> p, const int& Nx, const int& Ny,
                         double (*func)(double, double),
-                        std::map<std::pair<int, int>, double>& evaluated_points);
+                        std::map<std::pair<int, int>, const double>& evaluated_points);
 double eval_function(Point p, const int& Nx, const int& Ny,
                         double (*func)(double, double),
-                        std::map<std::pair<int, int>, double>& evaluated_points);
+                        std::map<std::pair<int, int>, const double>& evaluated_points);
 void integration_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, std::shared_ptr<Point>& p3,
                         int& Nx, int& Ny, double& integral,
                         const double& dx, const double& dy,
                         int& Nxsteps, const int& Nysteps,
                         const double subdomain_dblder_limit,
-                        std::map<std::pair<int, int>, double>& evaluated_points,
-                        double (*func)(double, double));
-double integrate_adaptive(std::shared_ptr<Point> origin,
+                        std::map<std::pair<int, int>, const double>& evaluated_points,
+                        double (*func)(double, double), std::vector<Point>& points);
+double integrate_adaptive(const Point& origin,
                             const int& Nx_origin, const int& Ny_origin,
                             const int& Nx_end, const int& Ny_end,
                             const double& dx, const double& dy,
                             int& Nxsteps, const int& Nysteps,
                             const double& subdomain_dblder_limit,
-                            std::map<std::pair<int, int>, double>& evaluated_points,
-                            double (*func)(double, double));
+                            std::map<std::pair<int, int>, const double>& evaluated_points,
+                            double (*func)(double, double), std::vector<Point>& points);
 double integrate2d(const Point& origin, const Point& end,
                     const double& dx, const double& dy,
                     const int& refinement_levels,
                     const double& subdomain_dblder_limit,
                     double (*func)(double, double));
+std::vector<std::vector<double>> mesh2d(const Point& origin, const Point& end,
+                                        const double& dx, const double& dy,
+                                        const int& refinement_levels,
+                                        const double& subdomain_dblder_limit,
+                                        double (*func)(double, double));
 double testfun(double x, double y);
-int integrator_test();
+double integrator_test(double origin_x, double origin_y, double end_x, double end_y,
+                       double dx, double dy, int refinement_levels, double subdomain_dblder_limit);
+std::vector<std::vector<double>> mesh_test(double origin_x, double origin_y, double end_x, double end_y,
+                                            double dx, double dy, int refinement_levels, double subdomain_dblder_limit);
