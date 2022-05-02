@@ -96,7 +96,7 @@ def test_integrate(do_plot=False):
     p2 = I.Point(x[1], y[1], z[1])
     p3 = I.Point(x[2], y[2], z[2])
 
-    integ = I.integrate(p1, p2, p3) # V = (1 / 3) * A * h for en pyramide
+    integ = I.integrate_plane(p1, p2, p3) # V = (1 / 3) * A * h for en pyramide
     if abs(integ - 2) > FLTEPS:
         if do_plot:
             print(1, integ - 2)
@@ -107,7 +107,7 @@ def test_integrate(do_plot=False):
     p1 = I.Point(x[0], y[0], z[0])
     p2 = I.Point(x[1], y[1], z[1])
     p3 = I.Point(x[2], y[2], z[2])
-    integ = I.integrate(p1, p2, p3)
+    integ = I.integrate_plane(p1, p2, p3)
     if abs(integ - 1) > FLTEPS:
         if do_plot:
             print(2, integ - 1)
@@ -118,7 +118,7 @@ def test_integrate(do_plot=False):
     p1 = I.Point(x[0], y[0], z[0])
     p2 = I.Point(x[1], y[1], z[1])
     p3 = I.Point(x[2], y[2], z[2])
-    integ = I.integrate(p1, p2, p3)
+    integ = I.integrate_plane(p1, p2, p3)
     if abs(integ - 1) > FLTEPS:
         if do_plot:
             plot_plane(p1, p2, p3)
@@ -307,7 +307,7 @@ def py_integrate(origin, end, dx, dy, Nxsteps, Nysteps, func, subdomainlimit, f_
         xlist[0] = xlist[1]
         xlist[1] = xlist[2]
         points = getpoints(xlist, ylist, zlist)
-        integral += I.integrate(points[0], points[1], points[2])
+        integral += I.integrate_plane(points[0], points[1], points[2])
 
         xlist[0] = xlist[1]
         xlist[1] = xlist[2]
@@ -324,7 +324,7 @@ def py_integrate(origin, end, dx, dy, Nxsteps, Nysteps, func, subdomainlimit, f_
         zlist[2] = eval_func(xlist[2], ylist[2], Nx, Ny)
 
         points = getpoints(xlist, ylist, zlist)
-        integral += I.integrate(points[0], points[1], points[2])
+        integral += I.integrate_plane(points[0], points[1], points[2])
 
         return x, y, Nx, Ny, integral
 
@@ -353,7 +353,7 @@ def py_integrate(origin, end, dx, dy, Nxsteps, Nysteps, func, subdomainlimit, f_
         xlist[0] = xlist[1]
         xlist[1] = xlist[2]
         points = getpoints(xlist, ylist, zlist)
-        integral += I.integrate(points[0], points[1], points[2])
+        integral += I.integrate_plane(points[0], points[1], points[2])
         if Ny < Ny_end:
             Nxsteps *= -1
             x, y, Nx, Ny, integral = step(x, y, Nx, Ny, integral)
