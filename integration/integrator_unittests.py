@@ -1,6 +1,7 @@
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+from integration.py_integrator import py_mesh, py_integrate
 plt.style.use('default')
 
 if '-debug' in sys.argv or '-Debug' in sys.argv or '-d' in sys.argv:
@@ -141,11 +142,60 @@ def test_integrate_simple(do_plot=False):
     return 0, 0
 
 def integration_expfun(do_plot=False):
-    r = I.test()
-    return r
+    r = I.integrator_test(0, 0, # Origin
+                          10, 10, # End
+                          0.25, 0.25, # dx, dy
+                          4, 0.2) # refinement_levels, dblder_limit
+    py_r = py_integrate((0, 0, 0, 0), # Origin
+                           (40, 40), # N_end
+                           0.25, 0.25, #dx, dy
+                           4, 4, # Refinement levels
+                           expfun, 0.2, 10) # Function, dblder_limit, func_limit
+    return py_r[0], r
+
+def expfun(x, y):
+    return np.exp(- ((x - 5)**2 + (y - 5)**2))
+
+def mesh_expfun(do_plot=False, projection='3d'):
+    print('\nMeshing\n')
+    x, y, z = I.mesh_test(0 ,0, # Origin
+                          10, 10, # End
+                          0.25, 0.25, # dx, dy
+                          4, 1) # refinement_levels, dblder_limit
+
+    py_x, py_y, py_z, _ = py_mesh((0, 0, 0, 0),
+                                   (40, 40),
+                                   0.25, 0.25,
+                                   4, 4,
+                                   expfun, 1, 10)
+    x_grid, y_grid = np.meshgrid(np.linspace(0, 10), np.linspace(0, 10))
+    if projection == '3d':
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        ax.scatter(x, y, z, marker='.', color='r')
+        #ax.plot_wireframe(x_grid, y_grid, expfun(x_grid, y_grid), color='black')
+        #ax.scatter(x, y, np.array(z) - expfun(np.array(x), np.array(y)))
+        ax.scatter(py_x, py_y, py_z, marker='x')
+        #ax.set_xlim(0, 10)
+        #ax.set_ylim(0, 10)
+    else:
+        colors = ['r', 'b', 'g', 'black']
+        j = 0
+        for i in range(1, len(x)):
+            #plt.plot(x[i-1 : i+1], y[i-1 : i + 1], color=colors[j], marker='o')
+            j += 1
+            if j == 4:
+                j = 0
+        plt.scatter(x, y, marker='o', color='r')
+        plt.scatter(py_x, py_y, marker='x')
+    plt.show()
 
 if __name__ == '__main__':
-    hold = input('Venter på debugger')
+    py_r, r = integration_expfun()
+    print('Py-integral is :', py_r / np.pi, 'pi')
+    print('Cpp-Integral is :', r / np.pi, 'pi')
+    #mesh_expfun(projection='3d')
+    exit(0)
     do_plot, do_print = False, False
     if '-print' in sys.argv:
         do_print = True
