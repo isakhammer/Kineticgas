@@ -47,7 +47,7 @@ void integration_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, st
                         int& Nxsteps, const int& Nysteps,
                         const double subdomain_dblder_limit,
                         std::map<std::pair<int, int>, const double>& evaluated_points,
-                        double (*func)(double, double), std::vector<Point>& points);
+                        double (*func)(double, double));
 double integrate_adaptive(const Point& origin,
                             const int& Nx_origin, const int& Ny_origin,
                             const int& Nx_end, const int& Ny_end,
@@ -55,7 +55,7 @@ double integrate_adaptive(const Point& origin,
                             int& Nxsteps, const int& Nysteps,
                             const double& subdomain_dblder_limit,
                             std::map<std::pair<int, int>, const double>& evaluated_points,
-                            double (*func)(double, double), std::vector<Point>& points);
+                            double (*func)(double, double));
 double integrate2d(const Point& origin, const Point& end,
                     const double& dx, const double& dy,
                     const int& refinement_levels,

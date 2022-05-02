@@ -143,7 +143,7 @@ void integration_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, st
                         int& Nxsteps, const int& Nysteps,
                         const double subdomain_dblder_limit,
                         std::map<std::pair<int, int>, const double>& evaluated_points,
-                        double (*func)(double, double), std::vector<Point>& points){
+                        double (*func)(double, double)){
 
     Point ystep{0, dy * Nysteps};
     Point xstep{dx * Nxsteps, - dy * Nysteps};
@@ -173,14 +173,13 @@ void integration_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, st
                                        sub_Nxsteps, sub_Nysteps,
                                        sub_subdomain_dblder_limit,
                                        evaluated_points,
-                                       func, points);
+                                       func);
         // Set all points to the gridpoint at the lower right corner of the subdomain that was just integrated (if Nxsteps is positive, otherwise to the lower left corner)
         p2 = p3;
         p1 = p2;
         *p3 += xstep + ystep; // Only move along x-axis
         Nx += Nxsteps;
         eval_function(p3, Nx, Ny, func, evaluated_points);
-        points.push_back(Point(*p3));
     }
     else{
         p1 = std::move(p2);
@@ -190,7 +189,6 @@ void integration_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, st
         eval_function(p3, Nx, Ny, func, evaluated_points);
 
         integral += integrate_plane(p1, p2, p3);
-        points.push_back(Point(*p3));
 
         p1 = std::move(p2);
         p2 = std::move(p3);
@@ -199,7 +197,6 @@ void integration_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, st
         Ny -= Nysteps;
         eval_function(p3, Nx, Ny, func, evaluated_points);
         integral += integrate_plane(p1, p2, p3);
-        points.push_back(Point(*p3));
     }
 
 }
@@ -211,8 +208,7 @@ double integrate_adaptive(const Point& origin,
                             int& Nxsteps, const int& Nysteps,
                             const double& subdomain_dblder_limit,
                             std::map<std::pair<int, int>, const double>& evaluated_points,
-                            double (*func)(double, double),
-                            std::vector<Point>& points){
+                            double (*func)(double, double)){
 
     double integral = 0;
     Point ystep{0, dy * Nysteps};
@@ -227,12 +223,10 @@ double integrate_adaptive(const Point& origin,
     Ny = Ny_origin;
     eval_function(p3, Nx, Ny, func, evaluated_points);
 
-    double I0 = integral;
-    integration_step(p1, p2, p3, Nx, Ny, integral, dx, dy, Nxsteps, Nysteps, subdomain_dblder_limit, evaluated_points, func, points);
+    integration_step(p1, p2, p3, Nx, Ny, integral, dx, dy, Nxsteps, Nysteps, subdomain_dblder_limit, evaluated_points, func);
     while (Ny < Ny_end){
-        I0 = integral;
         while (std::min(Nx_origin, Nx_end) < Nx && Nx < std::max(Nx_origin, Nx_end)){
-            integration_step(p1, p2, p3, Nx, Ny, integral, dx, dy, Nxsteps, Nysteps, subdomain_dblder_limit, evaluated_points, func, points);
+            integration_step(p1, p2, p3, Nx, Ny, integral, dx, dy, Nxsteps, Nysteps, subdomain_dblder_limit, evaluated_points, func);
         }
         p1 = std::move(p2);
         p2 = std::move(p3);
@@ -240,11 +234,9 @@ double integrate_adaptive(const Point& origin,
         Ny += Nysteps;
         eval_function(p3, Nx, Ny, func, evaluated_points);
         integral += integrate_plane(p1, p2, p3);
-        std::printf("%E %E %E\n", p3->x, p3->y, integral - I0);
-        points.push_back(Point(*p3));
         if (Ny < Ny_end){
             Nxsteps *= -1;
-            integration_step(p1, p2, p3, Nx, Ny, integral, dx, dy, Nxsteps, Nysteps, subdomain_dblder_limit, evaluated_points, func, points);
+            integration_step(p1, p2, p3, Nx, Ny, integral, dx, dy, Nxsteps, Nysteps, subdomain_dblder_limit, evaluated_points, func);
         }
     }
 
@@ -265,7 +257,6 @@ std::vector<std::vector<double>> mesh2d(const Point& origin, const Point& end,
     int Nxsteps = refinement_levels;
     int Nysteps = refinement_levels;
     std::map<std::pair<int, int>, const double> evaluated_points;
-    std::vector<Point> points;
     double val = integrate_adaptive(origin,
                                      Nx_origin, Ny_origin,
                                      Nx_end, Ny_end,
@@ -273,14 +264,14 @@ std::vector<std::vector<double>> mesh2d(const Point& origin, const Point& end,
                                      Nxsteps, Nysteps,
                                      subdomain_dblder_limit,
                                      evaluated_points,
-                                     func, points);
+                                     func);
 
     std::vector<double> x, y, z;
 
-    for (std::vector<const Point>::iterator it = points.begin(); it != points.end(); it++){
-        x.push_back(it->x);
-        y.push_back(it->y);
-        z.push_back(it->z);
+    for (std::map<std::pair<int, int>, const double>::iterator it = evaluated_points.begin(); it != evaluated_points.end(); it++){
+        x.push_back(origin.x + it->first.first * dx);
+        y.push_back(origin.y + it->first.second * dy);
+        z.push_back(it->second);
     }
     return std::vector<std::vector<double>> {x, y, z};
 }
@@ -299,7 +290,6 @@ double integrate2d(const Point& origin, const Point& end,
     int Nxsteps = refinement_levels;
     int Nysteps = refinement_levels;
     std::map<std::pair<int, int>, const double> evaluated_points;
-    std::vector<Point> points;
     double val = integrate_adaptive(origin,
                                      Nx_origin, Ny_origin,
                                      Nx_end, Ny_end,
@@ -307,7 +297,7 @@ double integrate2d(const Point& origin, const Point& end,
                                      Nxsteps, Nysteps,
                                      subdomain_dblder_limit,
                                      evaluated_points,
-                                     func, points);
+                                     func);
     return val;
 }
 
