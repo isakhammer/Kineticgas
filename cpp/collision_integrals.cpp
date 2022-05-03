@@ -38,9 +38,9 @@ double KineticGas::w_HS(int ij, double T, int l, int r){
 // Dimentionless collision integral for a Mie-potential
 double KineticGas::w_spherical(int ij, double T, int l, int r){
     Point origin{1e-5, 1e-5};
-    Point end{7.5, 5};
-    double dx{0.1}, dy{0.1};
-    int refinement_levels{8};
+    Point end{5, 3};
+    double dx{0.05}, dy{0.05};
+    int refinement_levels{4};
     double subdomain_dblder_limit{0.05};
     std::function<double(int, double, double, double, int, int)> f = std::bind(&KineticGas::w_spherical_integrand, this,
                                                                                 std::placeholders::_1, std::placeholders::_2, 
@@ -55,17 +55,11 @@ double KineticGas::w_spherical(int ij, double T, int l, int r){
 }
 
 double KineticGas::w_spherical_integrand(const int& ij, const double& T, 
-                                        const double& g, const double& b, 
+                                        const double& g, const double& b,
                                         const int& l, const int& r){ // Using b = b / sigma to better scale the axes. Multiply the final integral by sigma.
     const double chi_val = chi(ij, T, g, b * sigma_map[ij]);
-    return exp(- pow(g, 2)) * pow(g, 2.0 * r + 3.0) * (1 - pow(cos(chi_val), l)) * b;
+    return 2 * exp(- pow(g, 2)) * pow(g, 2.0 * r + 3.0) * (1 - pow(cos(chi_val), l)) * b;
 };
-
-double w_spherical_integrand_forwarder(void* context, const int& ij, const double& T, 
-                                        const double& g, const double& b, 
-                                        const int& l, const int& r){
-        return static_cast<KineticGas*>(context)->w_spherical_integrand(ij, T, g, b, l, r);
-}
 
 #pragma region // Helper funcions for computing dimentionless collision integrals
 
@@ -279,4 +273,9 @@ double KineticGas::chi(int ij, double T, double g, double b){
         std::printf("Computed chi = %E pi \n\n", val);
     #endif
     return val;
+}
+
+double KineticGas::chi_HS(int ij, double T, double g, double b){
+    if (b >= sigma_map[ij]) return 0;
+    return acos(1 - 2 * (1 - pow(b / sigma_map[ij], 2)));
 }

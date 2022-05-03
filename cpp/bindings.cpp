@@ -49,6 +49,7 @@ PYBIND11_MODULE(KineticGas_d, handle){
         .def("H_simple", &KineticGas::H_simple)
 
         .def("chi", &KineticGas::chi)
+        .def("chi_HS", &KineticGas::chi_HS)
         .def("get_R", &KineticGas::get_R)
         .def("potential", &KineticGas::potential)
         .def("potential_derivative_r", &KineticGas::potential_derivative_r)

@@ -22,21 +22,21 @@ double KineticGas::HS_potential(int ij, double r, double theta){
     if (r > sigma_map[ij]){
         return 0.0;
     }
-    return pow(sigma_map[ij] / r, 20) - (20.0 * 21.0 / 2) * pow(r / sigma_map[ij], 2) + 20.0 * 22.0 * (r / sigma_map[ij]) + 20.0 * ((21.0 / 2.0) - 22.0) - 1.0; // Force continiuous function
+    return (pow(sigma_map[ij] / (r), 20) - (20.0 * 21.0 / 2) * pow(r / sigma_map[ij], 2) + 20.0 * 22.0 * (r / sigma_map[ij]) + 20.0 * ((21.0 / 2.0) - 22.0) - 1.0) / BOLTZMANN; // Force continiuous function
 }
 
 double KineticGas::HS_potential_derivative(int ij, double r, double theta){
     if (r > sigma_map[ij]){
         return 0.0;
     }
-    return - 20.0 * pow(sigma_map[ij], 20) / pow(r, 21) - 20.0 * 21.0 * r / pow(sigma_map[ij], 2) + 20.0 * 22.0 / sigma_map[ij]; // Force continiuous first derivative
+    return (- 20.0 * pow(sigma_map[ij], 20) / pow((r), 21) - 20.0 * 21.0 * (r) / pow(sigma_map[ij], 2) + 20.0 * 22.0 / sigma_map[ij]) / BOLTZMANN; // Force continiuous first derivative
 }
 
 double KineticGas::HS_potential_dblderivative_rr(int ij, double r, double theta){
     if (r > sigma_map[ij]){
         return 0.0;
     }
-    return 20.0 * 21.0 * pow(sigma_map[ij], 20) / pow(r, 22) - 20.0 * 21.0 / pow(sigma_map[ij], 2); // Force continiuous second derivative
+    return (20.0 * 21.0 * pow(sigma_map[ij], 20) / pow((r), 22) - 20.0 * 21.0 / pow(sigma_map[ij], 2) ) / BOLTZMANN; // Force continiuous second derivative
 }
 
 double KineticGas::mie_potential(int ij, double r, double theta){
