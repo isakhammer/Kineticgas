@@ -7,16 +7,17 @@ void mesh_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, std::shar
                         int& Nxsteps, const int& Nysteps,
                         const double subdomain_dblder_limit,
                         std::map<std::pair<int, int>, const double>& evaluated_points,
-                         std::function<double(double, double)> func, std::vector<Point>& points){
+                        const int& arg_ij, const double& arg_T, const int& arg_r, const int& arg_l,
+                        std::function<double(int, double, double, double, int, int)> func, std::vector<Point>& points){
 
     Point ystep{0, dy * Nysteps};
     Point xstep{dx * Nxsteps, - dy * Nysteps};
 
-    double f = eval_function(*p3, Nx, Ny, func, evaluated_points);
-    double f1x = eval_function(*p3 + Point{dx * abs(Nxsteps), 0}, Nx + abs(Nxsteps), Ny, func, evaluated_points);
-    double f2x = eval_function(*p3 + Point{2 * dx * abs(Nxsteps), 0}, Nx + 2 * abs(Nxsteps), Ny, func, evaluated_points);
-    double f1y = eval_function(*p3 + Point{0, dy * abs(Nysteps)}, Nx, Ny + abs(Nysteps), func, evaluated_points);
-    double f2y = eval_function(*p3 + Point{0, 2 * dy * abs(Nysteps)}, Nx, Ny + 2 * abs(Nysteps), func, evaluated_points);
+    double f = eval_function(*p3, Nx, Ny, arg_ij, arg_T, arg_r, arg_l, func, evaluated_points);
+    double f1x = eval_function(*p3 + Point{dx * abs(Nxsteps), 0}, Nx + abs(Nxsteps), Ny, arg_ij, arg_T, arg_r, arg_l, func, evaluated_points);
+    double f2x = eval_function(*p3 + Point{2 * dx * abs(Nxsteps), 0}, Nx + 2 * abs(Nxsteps), Ny, arg_ij, arg_T, arg_r, arg_l, func, evaluated_points);
+    double f1y = eval_function(*p3 + Point{0, dy * abs(Nysteps)}, Nx, Ny + abs(Nysteps), arg_ij, arg_T, arg_r, arg_l, func, evaluated_points);
+    double f2y = eval_function(*p3 + Point{0, 2 * dy * abs(Nysteps)}, Nx, Ny + 2 * abs(Nysteps), arg_ij, arg_T, arg_r, arg_l, func, evaluated_points);
     double d2fdx2 = (f - 2 * f1x + f2x) / pow(dx * Nxsteps, 2);
     double d2fdy2 = (f - 2 * f1y + f2y) / pow(dy * Nysteps, 2);
 
@@ -37,13 +38,14 @@ void mesh_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, std::shar
                        sub_Nxsteps, sub_Nysteps,
                        sub_subdomain_dblder_limit,
                        evaluated_points,
+                       arg_ij, arg_T, arg_r, arg_l,
                        func, points);
         // Set all points to the gridpoint at the lower right corner of the subdomain that was just integrated (if Nxsteps is positive, otherwise to the lower left corner)
         p2 = p3;
         p1 = p2;
         *p3 += xstep + ystep; // Only move along x-axis
         Nx += Nxsteps;
-        eval_function(p3, Nx, Ny, func, evaluated_points);
+        eval_function(p3, Nx, Ny, arg_ij, arg_T, arg_r, arg_l, func, evaluated_points);
         points.push_back(Point(*p3));
     }
     else{
@@ -51,7 +53,7 @@ void mesh_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, std::shar
         p2 = std::move(p3);
         p3 = std::shared_ptr<Point>{new Point(*p2 + ystep)};
         Ny += Nysteps;
-        eval_function(p3, Nx, Ny, func, evaluated_points);
+        eval_function(p3, Nx, Ny, arg_ij, arg_T, arg_r, arg_l, func, evaluated_points);
 
         points.push_back(Point(*p3));
 
@@ -60,7 +62,7 @@ void mesh_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, std::shar
         p3 = std::shared_ptr<Point>{new Point(*p2 + xstep)};
         Nx += Nxsteps;
         Ny -= Nysteps;
-        eval_function(p3, Nx, Ny, func, evaluated_points);
+        eval_function(p3, Nx, Ny, arg_ij, arg_T, arg_r, arg_l, func, evaluated_points);
         points.push_back(Point(*p3));
     }
 
@@ -73,7 +75,8 @@ void mesh_adaptive(const Point& origin,
                     int& Nxsteps, const int& Nysteps,
                     const double& subdomain_dblder_limit,
                     std::map<std::pair<int, int>, const double>& evaluated_points,
-                    std::function<double(double, double)> func, std::vector<Point>& points){
+                    const int& arg_ij, const double& arg_T, const int& arg_r, const int& arg_l,
+                    std::function<double(int, double, double, double, int, int)> func, std::vector<Point>& points){
 
     Point ystep{0, dy * Nysteps};
     Point xstep{dx * Nxsteps, - dy * Nysteps};
@@ -85,24 +88,24 @@ void mesh_adaptive(const Point& origin,
     int Nx, Ny;
     Nx = Nx_origin;
     Ny = Ny_origin;
-    eval_function(p3, Nx, Ny, func, evaluated_points);
+    eval_function(p3, Nx, Ny, arg_ij, arg_T, arg_r, arg_l, func, evaluated_points);
     points.push_back(Point(*p3));
 
-    mesh_step(p1, p2, p3, Nx, Ny, dx, dy, Nxsteps, Nysteps, subdomain_dblder_limit, evaluated_points, func, points);
+    mesh_step(p1, p2, p3, Nx, Ny, dx, dy, Nxsteps, Nysteps, subdomain_dblder_limit, evaluated_points, arg_ij, arg_T, arg_r, arg_l, func, points);
     points.push_back(Point(*p3));
     while (Ny < Ny_end){
         while (std::min(Nx_origin, Nx_end) < Nx && Nx < std::max(Nx_origin, Nx_end)){
-            mesh_step(p1, p2, p3, Nx, Ny, dx, dy, Nxsteps, Nysteps, subdomain_dblder_limit, evaluated_points, func, points);
+            mesh_step(p1, p2, p3, Nx, Ny, dx, dy, Nxsteps, Nysteps, subdomain_dblder_limit, evaluated_points, arg_ij, arg_T, arg_r, arg_l, func, points);
         }
         p1 = std::move(p2);
         p2 = std::move(p3);
         p3 = std::make_shared<Point>(*p2 + ystep);
         Ny += Nysteps;
-        eval_function(p3, Nx, Ny, func, evaluated_points);
+        eval_function(p3, Nx, Ny, arg_ij, arg_T, arg_r, arg_l, func, evaluated_points);
         points.push_back(Point(*p3));
         if (Ny < Ny_end){
             Nxsteps *= -1;
-            mesh_step(p1, p2, p3, Nx, Ny, dx, dy, Nxsteps, Nysteps, subdomain_dblder_limit, evaluated_points, func, points);
+            mesh_step(p1, p2, p3, Nx, Ny, dx, dy, Nxsteps, Nysteps, subdomain_dblder_limit, evaluated_points, arg_ij, arg_T, arg_r, arg_l, func, points);
             points.push_back(Point(*p3));
         }
     }
@@ -112,7 +115,8 @@ std::vector<std::vector<double>> mesh2d(const Point& origin, const Point& end,
                                         const double& dx, const double& dy,
                                         const int& refinement_levels,
                                         const double& subdomain_dblder_limit,
-                                        std::function<double(double, double)> func){
+                                        const int& arg_ij, const double& arg_T, const int& arg_r, const int& arg_l,
+                                        std::function<double(int, double, double, double, int, int)> func){
 
     int Nx_origin{0}, Ny_origin{0};
     double delta_x = end.x - origin.x;
@@ -130,6 +134,7 @@ std::vector<std::vector<double>> mesh2d(const Point& origin, const Point& end,
                  Nxsteps, Nysteps,
                  subdomain_dblder_limit,
                  evaluated_points,
+                 arg_ij, arg_T, arg_r, arg_l,
                  func, points);
 
     std::vector<double> x, y, z;
@@ -142,33 +147,39 @@ std::vector<std::vector<double>> mesh2d(const Point& origin, const Point& end,
     return std::vector<std::vector<double>> {x, y, z};
 }
 
-double testfun(double x, double y){
+double testfun(const int ij, const double T, const double x, const double y, const int r, const int l){
     return exp(- (pow(x - 5, 2) + pow(y - 5, 2)));
 }
 
-double testfun_linear(double x, double y){
+double testfun_linear(const int ij, const double T, const double x, const double y, const int r, const int l){
     return x + y;
 }
 
 double integrator_test(double origin_x, double origin_y, double end_x, double end_y,
                        double dx, double dy, int refinement_levels, double subdomain_dblder_limit){
+    int ij{1}, r{1}, l{1}; // Dummy values
+    double T{1}; // Dummy values
     Point origin{origin_x, origin_y}, end{end_x, end_y};
-    double val = integrate2d(origin, end, dx, dy, refinement_levels, subdomain_dblder_limit, &testfun);
-    double a = -log(testfun(1, 0));
+    double val = integrate2d(origin, end, dx, dy, refinement_levels, subdomain_dblder_limit, ij, T, r, l, &testfun);
+    double a = -log(testfun(ij, T, 1, 0, r, l));
     return val; // Integral of testfun on (-inf, inf) is pi / a
 }
 
 double integrator_test_linear(double origin_x, double origin_y, double end_x, double end_y,
                        double dx, double dy, int refinement_levels, double subdomain_dblder_limit){
+    int ij{1}, r{1}, l{1}; // Dummy values
+    double T{1}; // Dummy values
     Point origin{origin_x, origin_y}, end{end_x, end_y};
-    double val = integrate2d(origin, end, dx, dy, refinement_levels, subdomain_dblder_limit, &testfun_linear);
+    double val = integrate2d(origin, end, dx, dy, refinement_levels, subdomain_dblder_limit, ij, T, r, l, &testfun_linear);
     return val;
 }
 
 std::vector<std::vector<double>> mesh_test(double origin_x, double origin_y, double end_x, double end_y,
                                             double dx, double dy, int refinement_levels, double subdomain_dblder_limit){
+    int ij{1}, r{1}, l{1}; // Dummy values
+    double T{1}; // Dummy values
     Point origin{origin_x, origin_y}, end{end_x, end_y};
-    std::vector<std::vector<double>> mesh = mesh2d(origin, end, dx, dy, refinement_levels, subdomain_dblder_limit, &testfun);
+    std::vector<std::vector<double>> mesh = mesh2d(origin, end, dx, dy, refinement_levels, subdomain_dblder_limit, ij, T, r, l, &testfun);
     return mesh;
 }
 
