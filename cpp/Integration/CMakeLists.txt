@@ -5,13 +5,19 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DDEBUG -Wno-unused-parameter -Wno-unused-const-variable")
 add_subdirectory(../pybind11 release)
 
+set(SOURCES Integration.cpp integrator_tests.cpp bindings.cpp)
+
 if (CMAKE_BUILD_TYPE MATCHES Release)
     message("Build type is Release")
     project(Integration_r)
-    pybind11_add_module(Integration_r Integration.cpp)
+    set(TARGET Integration_r)
+    #pybind11_add_module(Integration_r Integration.cpp integrator_tests.cpp)
 else()
     message("Build type is Debug")
     project(Integration_d)
-    pybind11_add_module(Integration_d Integration.cpp)
+    set(TARGET Integration_d)
+    #pybind11_add_module(Integration_d Integration.cpp integrator_tests.cpp)
 endif()
+
+pybind11_add_module(${TARGET} ${SOURCES})
 

@@ -1,16 +1,12 @@
 #include "Integration.h"
-#include "pybind11/pybind11.h"
-#include "pybind11/stl.h"
-#include "pybind11/operators.h"
 #include <vector>
 #include <algorithm>
 #include <memory>
 #include <utility>
 #include <map>
+#include <math.h>
 
 #define FLTEPS 1e-12
-
-namespace py = pybind11;
 
 Plane get_plane(const Point& p1, const Point& p2, const Point& p3){
     // a, b, c are components of vector normal to plane
@@ -165,7 +161,6 @@ void integration_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, st
         int sub_Nx_end = Nx + Nxsteps;
         int sub_Ny_end = Ny + Nysteps;
         double sub_subdomain_dblder_limit = subdomain_dblder_limit * 2;
-        double I0 = integral;
         integral += integrate_adaptive(sub_origin,
                                        sub_Nx_origin, sub_Ny_origin,
                                        sub_Nx_end, sub_Ny_end,
@@ -243,39 +238,6 @@ double integrate_adaptive(const Point& origin,
     return integral;
 }
 
-std::vector<std::vector<double>> mesh2d(const Point& origin, const Point& end,
-                                        const double& dx, const double& dy,
-                                        const int& refinement_levels,
-                                        const double& subdomain_dblder_limit,
-                                        double (*func)(double, double)){
-
-    int Nx_origin{0}, Ny_origin{0};
-    double delta_x = end.x - origin.x;
-    double delta_y = end.y - origin.y;
-    int Nx_end = (int) (delta_x / dx + 0.5);
-    int Ny_end = (int) (delta_y / dy + 0.5);
-    int Nxsteps = refinement_levels;
-    int Nysteps = refinement_levels;
-    std::map<std::pair<int, int>, const double> evaluated_points;
-    double val = integrate_adaptive(origin,
-                                     Nx_origin, Ny_origin,
-                                     Nx_end, Ny_end,
-                                     dx, dy,
-                                     Nxsteps, Nysteps,
-                                     subdomain_dblder_limit,
-                                     evaluated_points,
-                                     func);
-
-    std::vector<double> x, y, z;
-
-    for (std::map<std::pair<int, int>, const double>::iterator it = evaluated_points.begin(); it != evaluated_points.end(); it++){
-        x.push_back(origin.x + it->first.first * dx);
-        y.push_back(origin.y + it->first.second * dy);
-        z.push_back(it->second);
-    }
-    return std::vector<std::vector<double>> {x, y, z};
-}
-
 double integrate2d(const Point& origin, const Point& end,
                     const double& dx, const double& dy,
                     const int& refinement_levels,
@@ -299,67 +261,4 @@ double integrate2d(const Point& origin, const Point& end,
                                      evaluated_points,
                                      func);
     return val;
-}
-
-double testfun(double x, double y){
-    return exp(- (pow(x - 5, 2) + pow(y - 5, 2)));
-}
-
-double testfun_linear(double x, double y){
-    return x + y;
-}
-
-double integrator_test(double origin_x, double origin_y, double end_x, double end_y,
-                       double dx, double dy, int refinement_levels, double subdomain_dblder_limit){
-    Point origin{origin_x, origin_y}, end{end_x, end_y};
-    double val = integrate2d(origin, end, dx, dy, refinement_levels, subdomain_dblder_limit, &testfun);
-    double a = -log(testfun(1, 0));
-    return val;
-}
-
-double integrator_test_linear(double origin_x, double origin_y, double end_x, double end_y,
-                       double dx, double dy, int refinement_levels, double subdomain_dblder_limit){
-    Point origin{origin_x, origin_y}, end{end_x, end_y};
-    double val = integrate2d(origin, end, dx, dy, refinement_levels, subdomain_dblder_limit, &testfun_linear);
-    return val;
-}
-
-std::vector<std::vector<double>> mesh_test(double origin_x, double origin_y, double end_x, double end_y,
-                                            double dx, double dy, int refinement_levels, double subdomain_dblder_limit){
-    Point origin{origin_x, origin_y}, end{end_x, end_y};
-    std::vector<std::vector<double>> mesh = mesh2d(origin, end, dx, dy, refinement_levels, subdomain_dblder_limit, &testfun);
-    return mesh;
-}
-
-
-#ifndef DEBUG
-PYBIND11_MODULE(Integration_r, handle){
-#else
-PYBIND11_MODULE(Integration_d, handle){
-#endif
-    handle.doc() = "Integration module";
-    handle.def("get_plane", &get_plane);
-    handle.def("get_line", &get_line);
-    handle.def("integrate_plane", &integrate_plane_py);
-    handle.def("integrator_test", &integrator_test);
-    handle.def("integrator_test_linear", &integrator_test_linear);
-    handle.def("mesh_test", &mesh_test);
-
-    py::class_<Point>(handle, "Point")
-        .def(py::init<double, double, double>())
-        .def(py::init<double, double>())
-        .def_readonly("x", &Point::x)
-        .def_readonly("y", &Point::y)
-        .def_readonly("z", &Point::z);
-
-    py::class_<Plane>(handle, "Plane")
-        .def(py::init<double, double, double>())
-        .def_readonly("A", &Plane::A)
-        .def_readonly("B", &Plane::B)
-        .def_readonly("C", &Plane::C);
-
-    py::class_<Line>(handle, "Line")
-        .def(py::init<double, double>())
-        .def_readonly("a", &Line::a)
-        .def_readonly("b", &Line::b);
 }

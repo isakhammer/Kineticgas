@@ -61,13 +61,5 @@ double integrate2d(const Point& origin, const Point& end,
                     const int& refinement_levels,
                     const double& subdomain_dblder_limit,
                     double (*func)(double, double));
-std::vector<std::vector<double>> mesh2d(const Point& origin, const Point& end,
-                                        const double& dx, const double& dy,
-                                        const int& refinement_levels,
-                                        const double& subdomain_dblder_limit,
-                                        double (*func)(double, double));
-double testfun(double x, double y);
-double integrator_test(double origin_x, double origin_y, double end_x, double end_y,
-                       double dx, double dy, int refinement_levels, double subdomain_dblder_limit);
-std::vector<std::vector<double>> mesh_test(double origin_x, double origin_y, double end_x, double end_y,
-                                            double dx, double dy, int refinement_levels, double subdomain_dblder_limit);
+
+
