@@ -5,7 +5,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DDEBUG -Wno-unused-parameter -Wno-unused-const-variable")
 add_subdirectory(pybind11)
 
-set(SOURCES KineticGas.cpp potentials.cpp Factorial.cpp bindings.cpp)
+set(SOURCES KineticGas.cpp potentials.cpp collision_integrals.cpp Integration/Integration.cpp Factorial.cpp bindings.cpp)
 
 if (CMAKE_BUILD_TYPE MATCHES Release)
     message("Build type is Release")

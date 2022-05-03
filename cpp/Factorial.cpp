@@ -1,7 +1,5 @@
 #include "Factorial.h"
 
-constexpr double FLTEPS = 1e-10;
-
 Product ipow(int base, int expo){ // Following pow(0, 0) = 1 convention
     if (expo == 0){
         return 1;
