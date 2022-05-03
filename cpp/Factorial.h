@@ -1,8 +1,9 @@
 #pragma once
+#include "KineticGas.h"
+#include "global_params.h"
 #include "math.h"
 #include "cmath"
 #include <cstdio>
-#include "KineticGas.h"
 
 class Fac{
     public:

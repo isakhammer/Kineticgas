@@ -1,12 +1,9 @@
 #pragma once
 #include "Factorial.h"
+#include "global_params.h"
 #include <vector>
 #include <map>
 
-constexpr double BOLTZMANN = 1.38064852e-23;
-constexpr double GAS_CONSTANT = 8.31446261815324;
-constexpr double PI = 3.14159265359;
-constexpr double FLTEPS = 1e-10;
 
 enum potential_modes{
     HS_potential_idx, // Use Hard-sphere potential for omega-integrals
