@@ -5,13 +5,16 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0 -DDEBUG -Wno-unused-parameter -Wno-unused-const-variable")
 add_subdirectory(pybind11)
 
+set(SOURCES KineticGas.cpp potentials.cpp Factorial.cpp bindings.cpp)
+
 if (CMAKE_BUILD_TYPE MATCHES Release)
     message("Build type is Release")
     project(KineticGas_r)
-    pybind11_add_module(KineticGas_r KineticGas.cpp Factorial.cpp)
+    set(TARGET KineticGas_r)
 else()
     message("Build type is Debug")
     project(KineticGas_d)
-    pybind11_add_module(KineticGas_d KineticGas.cpp Factorial.cpp)
+    set(TARGET KineticGas_d)
 endif()
 
+pybind11_add_module(${TARGET} ${SOURCES})

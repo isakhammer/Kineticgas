@@ -1,7 +1,7 @@
 #pragma once
+#include "Factorial.h"
 #include <vector>
 #include <map>
-#include "Factorial.h"
 
 enum potential_modes{
     HS_potential_idx, // Use Hard-sphere potential for omega-integrals
@@ -63,7 +63,7 @@ class KineticGas{
     double potential_dblderivative_rr(int ij, double r, double theta);
 
     using PotentialDblDerivativePointer = double(KineticGas::*)(int, double, double);
-    //double HS_potential_dblderivative_rr(int ij, double r, double theta);
+    double HS_potential_dblderivative_rr(int ij, double r, double theta);
     double mie_potential_dblderivative_rr(int ij, double r, double theta);
     PotentialDblDerivativePointer p_potential_dblderivative_rr; // Will point to one of the above potential derivatives
 
@@ -122,3 +122,7 @@ int min(int a, int b);
 double min(double a, double b);
 int max(int a, int b);
 double max(double a, double b);
+
+double erfspace_func(const double& x, const double& lmin, const double& lmax, const double& a, const double& b);
+std::vector<double> erfspace(const double& lmin, const double& lmax, const int& N_gridpoints, double& a, double& b);
+std::vector<double> logspace(const double& lmin, const double& lmax, const int& N_gridpoints);

@@ -1,11 +1,9 @@
 #include "KineticGas.h"
-#include "pybind11/pybind11.h"
-#include "pybind11/stl.h"
-#include "pybind11/operators.h"
 #include <vector>
 #include <algorithm>
 #include <thread>
 #include <functional>
+#include <math.h>
 
 #ifdef DEBUG
 #define _LIBCPP_DEBUG 1
@@ -18,7 +16,7 @@ constexpr double FLTEPS = 1e-10;
 #define pprintf(flt) std::printf("%f", flt); std::printf("\n")
 #define pprinti(i) std::printf("%i", i); std::printf("\n")
 
-namespace py = pybind11;
+
 
 #pragma region // Global helper functions
 
@@ -216,6 +214,7 @@ KineticGas::KineticGas(std::vector<double> init_mole_weights,
         w_p = &KineticGas::w_HS;
         potential_p = &KineticGas::HS_potential;
         p_potential_derivative_r = &KineticGas::HS_potential_derivative;
+        p_potential_dblderivative_rr = &KineticGas::HS_potential_dblderivative_rr;
         break;
     case mie_potential_idx:
         w_p = &KineticGas::w_spherical_potential;
@@ -487,53 +486,7 @@ double KineticGas::w_spherical_potential(int ij, int l, int r){
 
 #pragma endregion
 
-#pragma region // Various intermolecular potentials
 
-double KineticGas::potential(int ij, double r, double theta){
-    return std::invoke(potential_p, this, ij, r, theta);
-}
-
-double KineticGas::potential_derivative_r(int ij, double r, double theta){
-    return std::invoke(p_potential_derivative_r, this, ij, r, theta);
-}
-
-double KineticGas::potential_dblderivative_rr(int ij, double r, double theta){
-    return std::invoke(p_potential_dblderivative_rr, this, ij, r, theta);
-}
-
-double KineticGas::HS_potential(int ij, double r, double theta){
-    if (r > sigma_map[ij]){
-        return 0.0;
-    }
-    return 1e30;
-}
-
-double KineticGas::HS_potential_derivative(int ij, double r, double theta){
-    if (r < sigma_map[ij]){
-        return - 1e30;
-    }
-    return 0.0;
-}
-
-double KineticGas::mie_potential(int ij, double r, double theta){
-    return C_map[ij] * eps_map[ij] * (pow(sigma_map[ij] / r, lr_map[ij]) - pow(sigma_map[ij] / r, la_map[ij]));
-}
-
-double KineticGas::mie_potential_derivative(int ij, double r, double theta){
-    const double lr = lr_map[ij];
-    const double la = la_map[ij];
-    const double s = sigma_map[ij];
-    return C_map[ij] * eps_map[ij] * ((la * pow(s, la) / pow(r, la + 1)) - (lr * pow(s, lr) / pow(r, lr + 1)));
-}
-
-double KineticGas::mie_potential_dblderivative_rr(int ij, double r, double theta){
-    const double lr = lr_map[ij];
-    const double la = la_map[ij];
-    const double s = sigma_map[ij];
-    return C_map[ij] * eps_map[ij] * ((lr * (lr + 1) * pow(s, lr) / pow(r, lr + 2)) - (la * (la + 1) * pow(s, la) / pow(r, la + 2)));
-}
-
-#pragma endregion
 
 #pragma region // Helper funcions for computing dimentionless collision integrals
 
@@ -747,65 +700,4 @@ double KineticGas::chi(int ij, double T, double g, double b){
     #endif
     return val;
 }
-#pragma endregion
-
-#pragma region // Bindings
-
-#ifndef DEBUG
-PYBIND11_MODULE(KineticGas_r, handle){
-#else
-PYBIND11_MODULE(KineticGas_d, handle){
-#endif
-    handle.doc() = "Is this documentation? This is documentation.";
-    handle.def("cpp_tests", &cpp_tests);
-    handle.def("ipow", &ipow);
-    handle.def("logspace", &logspace);
-    handle.def("erfspace", &erfspace);
-    
-    py::class_<Product>(handle, "Product")
-        .def(py::init<int>())
-        .def(py::init<double>())
-        .def(py::init<Fac>())
-        .def("eval", &Product::eval);
-
-    py::class_<Fac>(handle, "Fac")
-        .def(py::init<int>())
-        .def("eval", &Fac::eval);
-    
-    py::class_<KineticGas>(handle, "cpp_KineticGas")
-        .def(py::init<
-                        std::vector<double>, 
-                        std::vector<std::vector<double>>,
-                        std::vector<std::vector<double>>,
-                        std::vector<std::vector<double>>,
-                        std::vector<std::vector<double>>,
-                        int
-                    >()
-            )
-        .def("get_A_matrix", &KineticGas::get_A_matrix)
-        .def("get_delta_vector", &KineticGas::get_delta_vector)
-        .def("get_reduced_A_matrix", &KineticGas::get_reduced_A_matrix)
-        .def("get_alpha_vector", &KineticGas::get_alpha_vector)
-        .def("A", &KineticGas::A)
-        .def("A_prime", &KineticGas::A_prime)
-        .def("A_trippleprime", &KineticGas::A_trippleprime)
-        .def("H_ij", &KineticGas::H_ij)
-        .def("H_i", &KineticGas::H_i)
-        .def("H_simple", &KineticGas::H_simple)
-
-        .def("chi", &KineticGas::chi)
-        .def("get_R", &KineticGas::get_R)
-        .def("potential", &KineticGas::potential)
-        .def("potential_derivative_r", &KineticGas::potential_derivative_r)
-        .def("potential_dblderivative_rr", &KineticGas::potential_dblderivative_rr)
-        .def("omega", &KineticGas::omega)
-
-        .def("get_R_rootfunc", &KineticGas::get_R_rootfunc)
-        .def("get_R_rootfunc_derivative", &KineticGas::get_R_rootfunc_derivative)
-
-        .def("theta", &KineticGas::theta)
-        .def("theta_integrand", &KineticGas::theta_integrand)
-        .def("theta_integrand_dblderivative", &KineticGas::theta_integrand_dblderivative);
-}
-
 #pragma endregion
