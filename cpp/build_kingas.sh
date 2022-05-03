@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -e
-cd cpp/release
 
 while test $# -gt 0
 do
@@ -18,7 +17,8 @@ do
             ;;
         --Debug)
             echo "Building Debug"
-            cd ../debug
+            bash cpp/build_integration.sh --Debug
+            cd cpp/debug
             cmake -DCMAKE_BUILD_TYPE=Debug ..
             make
             cd ../..
@@ -44,6 +44,8 @@ do
 done
 
 echo "Building Release"
+bash cpp/build_integration.sh
+cd cpp/release
 cmake -DCMAKE_BUILD_TYPE=Release  ..
 make
 cd ../..

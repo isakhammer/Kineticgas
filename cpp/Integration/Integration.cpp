@@ -180,7 +180,8 @@ void integration_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, st
         Ny += Nysteps;
         eval_function(p3, Nx, Ny, arg_ij, arg_T, arg_l, arg_r, func, evaluated_points);
         integral += integrate_plane(p1, p2, p3);
-        p1 = p2;
+
+        p1 = p3;
         p2 = p3;
         *p3 += xstep; // Set all points to the point following the refined region
         Nx += Nxsteps;
@@ -265,8 +266,12 @@ double integrate2d(const Point& origin, const Point& end,
     int Nxsteps = refinement_levels;
     int Nysteps = refinement_levels;
     std::map<std::pair<int, int>, const double> evaluated_points;
-    std::printf("Calling integrator with:\nOrigin : %E %E, End : %E, %E \ndx, dy : %E, %E\nRefinement : %i\nArgs : %i, %E, %i, %i\n\n",
-                origin.x, origin.y, end.x, end.y, dx, dy, refinement_levels, arg_ij, arg_T, arg_l, arg_r);
+
+    #ifdef DEBUG
+        std::printf("Calling integrator with:\nOrigin : %E %E, End : %E, %E \ndx, dy : %E, %E\nRefinement : %i\nArgs : %i, %E, %i, %i\n\n",
+                    origin.x, origin.y, end.x, end.y, dx, dy, refinement_levels, arg_ij, arg_T, arg_l, arg_r);
+    #endif
+
     double val = integrate_adaptive(origin,
                                      Nx_origin, Ny_origin,
                                      Nx_end, Ny_end,

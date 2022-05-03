@@ -152,14 +152,15 @@ def test_integrate_2d_linear(do_plot=False):
 def test_integration_expfun(do_plot=False):
     ox, oy = 0, 0
     ex, ey = 10, 10
-    dx, dy = 0.2, 0.2
-    rlevels, dblderlimit = 8, 0.01
+    dx, dy = 0.1, 0.1
+    rlevels, dblderlimit = 8, 0.05
     r = I.integrator_test(ox, oy, # Origin
                           ex, ey, # End
                           dx, dy, # dx, dy
                           rlevels, dblderlimit) # refinement_levels, dblder_limit
 
     if do_plot is True:
+        print(abs((r / np.pi) - 1) * 100)
         mesh_expfun(ox, oy, # Origin
                     ex, ey, # End
                     dx, dy, # dx, dy
@@ -182,12 +183,12 @@ def mesh_expfun(ox, oy, # Origin
     if projection == '3d':
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
-        ax.scatter(x, y, z, marker='.', color='r')
+        ax.plot(x, y, z, linewidth='0.5')
     else:
         colors = ['r', 'b', 'g', 'black']
         j = 0
         for i in range(1, len(x)):
-            plt.plot(x[i-1 : i+1], y[i-1 : i + 1], color=colors[j], marker='o')
+            plt.plot(x[i-1 : i+1], y[i-1 : i + 1], color=colors[j], linewidth='0.5', marker='o', markersize=j)
             j += 1
             if j == 4:
                 j = 0

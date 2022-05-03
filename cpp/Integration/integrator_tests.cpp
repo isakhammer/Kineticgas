@@ -41,12 +41,28 @@ void mesh_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, std::shar
                        arg_ij, arg_T, arg_l, arg_r,
                        func, points);
         // Set all points to the gridpoint at the lower right corner of the subdomain that was just integrated (if Nxsteps is positive, otherwise to the lower left corner)
-        p2 = p3;
-        p1 = p2;
-        *p3 += xstep + ystep; // Only move along x-axis
-        Nx += Nxsteps;
+        //p2 = p3;
+        //p1 = p2;
+        //*p3 += xstep + ystep; // Only move along x-axis
+        //Nx += Nxsteps;
+        //eval_function(p3, Nx, Ny, arg_ij, arg_T, arg_l, arg_r, func, evaluated_points);
+        //points.push_back(Point(*p3));
+
+        p1 = std::move(p2);
+        p2 = std::move(p3);
+        p3 = std::shared_ptr<Point>{new Point(*p2 + ystep)};
+        Ny += Nysteps;
         eval_function(p3, Nx, Ny, arg_ij, arg_T, arg_l, arg_r, func, evaluated_points);
         points.push_back(Point(*p3));
+
+        p1 = p3;
+        p2 = p3;
+        *p3 += xstep; // Set all points to the point following the refined region
+        Nx += Nxsteps;
+        Ny -= Nysteps;
+        eval_function(p3, Nx, Ny, arg_ij, arg_T, arg_l, arg_r, func, evaluated_points);
+        points.push_back(Point(*p3));
+
     }
     else{
         p1 = std::move(p2);
@@ -180,6 +196,15 @@ std::vector<std::vector<double>> mesh_test(double origin_x, double origin_y, dou
     double T{1}; // Dummy values
     Point origin{origin_x, origin_y}, end{end_x, end_y};
     std::vector<std::vector<double>> mesh = mesh2d(origin, end, dx, dy, refinement_levels, subdomain_dblder_limit, ij, T, r, l, &testfun);
+    return mesh;
+}
+
+std::vector<std::vector<double>> mesh_test_linear(double origin_x, double origin_y, double end_x, double end_y,
+                       double dx, double dy, int refinement_levels, double subdomain_dblder_limit){
+    int ij{1}, r{1}, l{1}; // Dummy values
+    double T{1}; // Dummy values
+    Point origin{origin_x, origin_y}, end{end_x, end_y};
+    std::vector<std::vector<double>> mesh = mesh2d(origin, end, dx, dy, refinement_levels, subdomain_dblder_limit, ij, T, r, l, &testfun_linear);
     return mesh;
 }
 
