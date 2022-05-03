@@ -37,11 +37,11 @@ Line get_line(const Point& p1, const Point& p2); // Return vector of [A, B] wher
 double integrate_plane_py(const Point& p1, const Point& p2, const Point& p3); // Integrate the plane interpolating (p1, p2, p3) with the triangle spanned by (p1, p2, p3)
 double integrate_plane(std::shared_ptr<const Point> p1, std::shared_ptr<const Point> p2, std::shared_ptr<const Point> p3);
 double eval_function(std::shared_ptr<Point> p, const int& Nx, const int& Ny,
-                        const int& arg_ij, const double& arg_T, const int& arg_r, const int& arg_l,
+                        const int& arg_ij, const double& arg_T, const int& arg_l, const int& arg_r,
                         std::function<double(int, double, double, double, int, int)> func,
                         std::map<std::pair<int, int>, const double>& evaluated_points);
 double eval_function(Point p, const int& Nx, const int& Ny,
-                        const int& arg_ij, const double& arg_T, const int& arg_r, const int& arg_l,
+                        const int& arg_ij, const double& arg_T, const int& arg_l, const int& arg_r,
                         std::function<double(int, double, double, double, int, int)> func,
                         std::map<std::pair<int, int>, const double>& evaluated_points);
 void integration_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, std::shared_ptr<Point>& p3,
@@ -50,7 +50,7 @@ void integration_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, st
                         int& Nxsteps, const int& Nysteps,
                         const double subdomain_dblder_limit,
                         std::map<std::pair<int, int>, const double>& evaluated_points,
-                        const int& arg_ij, const double& arg_T, const int& arg_r, const int& arg_l,
+                        const int& arg_ij, const double& arg_T, const int& arg_l, const int& arg_r,
                         std::function<double(int, double, double, double, int, int)> func);
 double integrate_adaptive(const Point& origin,
                             const int& Nx_origin, const int& Ny_origin,
@@ -59,13 +59,13 @@ double integrate_adaptive(const Point& origin,
                             int& Nxsteps, const int& Nysteps,
                             const double& subdomain_dblder_limit,
                             std::map<std::pair<int, int>, const double>& evaluated_points,
-                            const int& arg_ij, const double& arg_T, const int& arg_r, const int& arg_l,
+                            const int& arg_ij, const double& arg_T, const int& arg_l, const int& arg_r,
                             std::function<double(int, double, double, double, int, int)> func);
 double integrate2d(const Point& origin, const Point& end,
                     const double& dx, const double& dy,
                     const int& refinement_levels,
                     const double& subdomain_dblder_limit,
-                    const int& arg_ij, const double& arg_T, const int& arg_r, const int& arg_l,
+                    const int& arg_ij, const double& arg_T, const int& arg_l, const int& arg_r,
                      std::function<double(int, double, double, double, int, int)> func);
 
 
