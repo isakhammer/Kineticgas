@@ -107,7 +107,7 @@ double integrate_plane(std::shared_ptr<const Point> p1, std::shared_ptr<const Po
 // Checks the map to see if the function has already been evaluated, in which case value is retrieved from the map.
 // Returns the function value, and also stores the value in the z-component of the point.
 double eval_function(std::shared_ptr<Point> p, const int& Nx, const int& Ny,
-                        double (*func)(double, double),
+                        std::function<double(double, double)> func,
                         std::map<std::pair<int, int>, const double>& evaluated_points){
         std::pair<int, int> pos{Nx, Ny};
         if (evaluated_points.find(pos) == evaluated_points.end()){
@@ -122,7 +122,7 @@ double eval_function(std::shared_ptr<Point> p, const int& Nx, const int& Ny,
 
 // Evaluate function without storing in point
 double eval_function(Point p, const int& Nx, const int& Ny,
-                        double (*func)(double, double),
+                        std::function<double(double, double)> func,
                         std::map<std::pair<int, int>, const double>& evaluated_points){
         std::pair<int, int> pos{Nx, Ny};
         if (evaluated_points.find(pos) == evaluated_points.end()){
@@ -139,7 +139,7 @@ void integration_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, st
                         int& Nxsteps, const int& Nysteps,
                         const double subdomain_dblder_limit,
                         std::map<std::pair<int, int>, const double>& evaluated_points,
-                        double (*func)(double, double)){
+                         std::function<double(double, double)> func){
 
     Point ystep{0, dy * Nysteps};
     Point xstep{dx * Nxsteps, - dy * Nysteps};
@@ -203,7 +203,7 @@ double integrate_adaptive(const Point& origin,
                             int& Nxsteps, const int& Nysteps,
                             const double& subdomain_dblder_limit,
                             std::map<std::pair<int, int>, const double>& evaluated_points,
-                            double (*func)(double, double)){
+                             std::function<double(double, double)> func){
 
     double integral = 0;
     Point ystep{0, dy * Nysteps};
@@ -242,7 +242,7 @@ double integrate2d(const Point& origin, const Point& end,
                     const double& dx, const double& dy,
                     const int& refinement_levels,
                     const double& subdomain_dblder_limit,
-                    double (*func)(double, double)){
+                     std::function<double(double, double)> func){
 
     int Nx_origin{0}, Ny_origin{0};
     double delta_x = end.x - origin.x;

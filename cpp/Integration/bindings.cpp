@@ -3,6 +3,7 @@
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 #include "pybind11/operators.h"
+#include "pybind11/functional.h"
 
 namespace py = pybind11;
 
@@ -15,6 +16,8 @@ PYBIND11_MODULE(Integration_d, handle){
     handle.def("get_plane", &get_plane);
     handle.def("get_line", &get_line);
     handle.def("integrate_plane", &integrate_plane_py);
+    handle.def("integrate2d", &integrate2d);
+    handle.def("mesh2d", &mesh2d);
 
     handle.def("integrator_test", &integrator_test);
     handle.def("integrator_test_linear", &integrator_test_linear);

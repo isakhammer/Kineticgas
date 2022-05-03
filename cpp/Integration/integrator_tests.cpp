@@ -7,7 +7,7 @@ void mesh_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, std::shar
                         int& Nxsteps, const int& Nysteps,
                         const double subdomain_dblder_limit,
                         std::map<std::pair<int, int>, const double>& evaluated_points,
-                        double (*func)(double, double), std::vector<Point>& points){
+                         std::function<double(double, double)> func, std::vector<Point>& points){
 
     Point ystep{0, dy * Nysteps};
     Point xstep{dx * Nxsteps, - dy * Nysteps};
@@ -73,7 +73,7 @@ void mesh_adaptive(const Point& origin,
                     int& Nxsteps, const int& Nysteps,
                     const double& subdomain_dblder_limit,
                     std::map<std::pair<int, int>, const double>& evaluated_points,
-                    double (*func)(double, double), std::vector<Point>& points){
+                    std::function<double(double, double)> func, std::vector<Point>& points){
 
     Point ystep{0, dy * Nysteps};
     Point xstep{dx * Nxsteps, - dy * Nysteps};
@@ -112,7 +112,7 @@ std::vector<std::vector<double>> mesh2d(const Point& origin, const Point& end,
                                         const double& dx, const double& dy,
                                         const int& refinement_levels,
                                         const double& subdomain_dblder_limit,
-                                        double (*func)(double, double)){
+                                        std::function<double(double, double)> func){
 
     int Nx_origin{0}, Ny_origin{0};
     double delta_x = end.x - origin.x;
