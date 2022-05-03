@@ -163,7 +163,7 @@ def get_force_grid(rmin=0.8,
             if r < rmin * sigma:
                 F = 0
             else:
-                F = kin.cpp_kingas.potential_derivative_r(1, r, t)
+                F = - kin.cpp_kingas.potential_derivative_r(1, r, t)
 
             F_grid[yi, xi] = F
 
@@ -175,13 +175,45 @@ def get_force_grid(rmin=0.8,
     else:
         ax.imshow(F_grid, cmap='bwr', norm=norm, extent=[x_list[0]/sigma, x_list[-1]/sigma, y_list[0]/sigma, y_list[-1]/sigma])
 
+def plot_hard_sphere_chi():
+    kin = KineticGas('AR,C1', potential='hs')
+    sigma = kin.sigma_ij[0, 0]
+    T = 300
+
+    r_list = np.linspace(1e-5 * sigma, 0.99 * sigma)
+    chi_list = np.empty_like(r_list)
+    chi_HS_list = np.empty_like(r_list)
+    u_list = np.full_like(r_list, np.nan)
+    for i, r in enumerate(r_list):
+        chi_list[i] = kin.cpp_kingas.chi(1, T, 1, r)
+        chi_HS_list[i] = kin.cpp_kingas.chi_HS(1, T, 1, r)
+        if r > 0.9 * sigma:
+            u_list[i] = kin.cpp_kingas.potential(1, r, 0)
+
+    fig, ax = plt.subplots()
+    twn = ax.twinx()
+    plt.sca(ax)
+    p1, = plt.plot(r_list / sigma, chi_list / np.pi, label=r'Numeric', color='r', linestyle='-', marker='.')
+    p2, = plt.plot(r_list / sigma, chi_HS_list / np.pi, label='Analytic', color='orange', linestyle='--', marker='x')
+    plt.ylabel(r'$\chi$ [$\pi$]', color='r')
+    plt.xlabel(r'$b$ [$\sigma$]')
+    plt.sca(twn)
+    plt.plot(r_list / sigma, u_list, color='b')
+    plt.ylabel(r'$u_{12}$ [J]', color='b')
+    plt.legend(handles = [p1, p2], loc='lower left')
+    plt.show()
+
 
 if __name__ == '__main__':
-    kin = KineticGas('AR,C1', potential='mie')
+    plot_hard_sphere_chi()
+    exit(0)
+
+    kin = KineticGas('AR,C1', potential='hs')
     sigma = kin.sigma_ij[0, 0]
     T, g0, b = 300, 2, 0.8
     g0_list = [1, 1.5, 2]
-    b_list = [0.8, 0.9, 1]
+    b_list = [0.3, 0.65, 1.1]
+
     fig, axs = plt.subplots(1, 3, sharey='all')
 
     xrange = 3 # [sigma]
@@ -210,6 +242,7 @@ if __name__ == '__main__':
             #print()
             print('Chi (numeric) :', round(get_chi_from_path(x, y) / np.pi, 2), 'pi')
             print('Chi (kingas)  :', round(kin.cpp_kingas.chi(1, T, g0, b * sigma) / np.pi, 2), 'pi')
+            print('Chi (HS, exact)  :', round(kin.cpp_kingas.chi_HS(1, T, g0, b * sigma) / np.pi, 2), 'pi')
             #print()
 
             for i in range(1, len(g)):
