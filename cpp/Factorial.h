@@ -15,8 +15,6 @@ class Fac{
 
 class Product{
     public:
-    static int prod_count;
-    int id;
     int isize;
     int dsize;
     int ilist[1000];
