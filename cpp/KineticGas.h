@@ -3,6 +3,7 @@
 #include "global_params.h"
 #include <vector>
 #include <map>
+#include <functional>
 
 
 enum potential_modes{
@@ -42,11 +43,14 @@ class KineticGas{
     // Collision integrals
     double omega(int ij, int l, int r); // Calls the dimentionless collision integral function pointed to by "w_p", selected at initialisation with the "potential_mode" parameter.
 
-    using CollisionIntegralPointer = double(KineticGas::*)(int, int, int);
-    double w_HS(int ij, int l, int r); // Dimentionless hard-sphere collision integral
-    double w_spherical_potential(int ij, int l, int r); // Dimentionless collision integral for spherical potentials
+    using CollisionIntegralPointer = double(KineticGas::*)(int, double, int, int);
+    double w_HS(int ij, double T, int l, int r); // Dimentionless hard-sphere collision integral
+    double w_spherical(int ij, double T, int l, int r); // Dimentionless collision integral for spherical potentials
     CollisionIntegralPointer w_p; // Will point to one of the above dimentionless collision integrals
-
+    double w_spherical_integrand(const int& ij, const double& T, 
+                            const double& g, const double& b, 
+                            const int& l, const int& r);
+                            
     // Potential models
     double potential(int ij, double r, double theta); // Passes call to the potential corresponding to "potential_mode", using the pointer "potential_p"
 
@@ -79,7 +83,6 @@ class KineticGas{
     double get_R_rootfunc(int ij, double T, double g, double b, double& r);
     double get_R_rootfunc_derivative(int ij, double T, double g, double b, double& r);
     double chi(int ij, double T, double g, double b);
-    double w_integral_b(int ij, double T, double g); // TODO: Implementer denne!
 
     std::vector<std::vector<double>> get_A_matrix(
         double in_T,

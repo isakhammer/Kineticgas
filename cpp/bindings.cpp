@@ -60,5 +60,9 @@ PYBIND11_MODULE(KineticGas_d, handle){
 
         .def("theta", &KineticGas::theta)
         .def("theta_integrand", &KineticGas::theta_integrand)
-        .def("theta_integrand_dblderivative", &KineticGas::theta_integrand_dblderivative);
+        .def("theta_integrand_dblderivative", &KineticGas::theta_integrand_dblderivative)
+        
+        .def("w_spherical_integrand", &KineticGas::w_spherical_integrand)
+        .def("w_spherical", &KineticGas::w_spherical)
+        .def("w_HS", &KineticGas::w_HS);
 }

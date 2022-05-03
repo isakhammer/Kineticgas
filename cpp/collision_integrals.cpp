@@ -19,7 +19,7 @@ Common variables are:
 #pragma region // Collision integrals for various potentials
 
 double KineticGas::omega(int ij, int l, int r){
-    double w = std::invoke(w_p, this, ij, l, r); // w_p is a pointer to the dimentionless collision integral corresponding to this.potential_mode
+    double w = std::invoke(w_p, this, ij, T, l, r); // w_p is a pointer to the dimentionless collision integral corresponding to this.potential_mode
     if (ij == 1 || ij == 2){
         return pow(sigma[ij - 1], 2) * sqrt((PI * BOLTZMANN * T) / mole_weights[ij - 1]) * w;
     }
@@ -27,7 +27,7 @@ double KineticGas::omega(int ij, int l, int r){
 }
 
 // Dimentionless collision integral for a Hard-sphere potential (analytic)
-double KineticGas::w_HS(int ij, int l, int r){
+double KineticGas::w_HS(int ij, double T, int l, int r){
     int f = Fac(r + 1).eval();
     if (l % 2 == 0){
         return 0.25 * (2 - ((1.0 / (l + 1)) * 2)) * f;
@@ -36,8 +36,35 @@ double KineticGas::w_HS(int ij, int l, int r){
 }
 
 // Dimentionless collision integral for a Mie-potential
-double KineticGas::w_spherical_potential(int ij, int l, int r){
-    throw "Collision integral for Mie potential is not implemented!";
+double KineticGas::w_spherical(int ij, double T, int l, int r){
+    Point origin{1e-5, 1e-5};
+    Point end{7.5, 5};
+    double dx{0.1}, dy{0.1};
+    int refinement_levels{8};
+    double subdomain_dblder_limit{0.05};
+    std::function<double(int, double, double, double, int, int)> f = std::bind(&KineticGas::w_spherical_integrand, this,
+                                                                                std::placeholders::_1, std::placeholders::_2, 
+                                                                                std::placeholders::_3, std::placeholders::_4,
+                                                                                std::placeholders::_5, std::placeholders::_6);
+    return integrate2d(origin, end,
+                        dx, dy,
+                        refinement_levels,
+                        subdomain_dblder_limit,
+                        ij, T, l, r,
+                        f);
+}
+
+double KineticGas::w_spherical_integrand(const int& ij, const double& T, 
+                                        const double& g, const double& b, 
+                                        const int& l, const int& r){ // Using b = b / sigma to better scale the axes. Multiply the final integral by sigma.
+    const double chi_val = chi(ij, T, g, b * sigma_map[ij]);
+    return exp(- pow(g, 2)) * pow(g, 2.0 * r + 3.0) * (1 - pow(cos(chi_val), l)) * b;
+};
+
+double w_spherical_integrand_forwarder(void* context, const int& ij, const double& T, 
+                                        const double& g, const double& b, 
+                                        const int& l, const int& r){
+        return static_cast<KineticGas*>(context)->w_spherical_integrand(ij, T, g, b, l, r);
 }
 
 #pragma region // Helper funcions for computing dimentionless collision integrals
@@ -136,7 +163,7 @@ double KineticGas::theta_integral(const int ij, const double T, const double R, 
 
         } while (integral_09 < convergence_threshold * total_integral);
 
-        if ((isnan(total_integral) || isinf(total_integral))){
+        if ((isnan(total_integral) || isinf(total_integral))){
             if (lower_cutoff_factor > 1e-2) throw "Something wrong...";
             lower_cutoff_factor *= 10;
             r_prime = (1 + lower_cutoff_factor) * R;
@@ -154,7 +181,7 @@ double KineticGas::theta_integral(const int ij, const double T, const double R, 
             }
         #endif
 
-    } while (abs_eps_tot / total_integral > rel_eps_tol || step_eps_tol < 1e-10);
+    } while (abs_eps_tot / total_integral > rel_eps_tol || step_eps_tol < 1e-10);
 
     if (step_eps_tol < 1e-10){
         std::printf("\nWarning : theta integral could not achieve expected precicion\n");

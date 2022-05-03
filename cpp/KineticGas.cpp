@@ -214,7 +214,7 @@ KineticGas::KineticGas(std::vector<double> init_mole_weights,
         p_potential_dblderivative_rr = &KineticGas::HS_potential_dblderivative_rr;
         break;
     case mie_potential_idx:
-        w_p = &KineticGas::w_spherical_potential;
+        w_p = &KineticGas::w_spherical;
         potential_p = &KineticGas::mie_potential;
         p_potential_derivative_r = &KineticGas::mie_potential_derivative;
         p_potential_dblderivative_rr = &KineticGas::mie_potential_dblderivative_rr;
