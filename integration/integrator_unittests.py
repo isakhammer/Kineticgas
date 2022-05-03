@@ -1,7 +1,6 @@
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
-from integration.py_integrator import py_mesh, py_integrate
 plt.style.use('default')
 
 if '-debug' in sys.argv or '-Debug' in sys.argv or '-d' in sys.argv:
@@ -169,9 +168,6 @@ def test_integration_expfun(do_plot=False):
     if abs((r / np.pi) - 1) > 1e-2:
         return 40, r
     return 0, 0
-
-def expfun(x, y):
-    return np.exp(- ((x - 5)**2 + (y - 5)**2))
 
 def mesh_expfun(ox, oy, # Origin
                 ex, ey, # End
