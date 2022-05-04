@@ -152,15 +152,15 @@ def test_integrate_2d_linear(do_plot=False):
 def test_integration_expfun(do_plot=False):
     ox, oy = 0, 0
     ex, ey = 10, 10
-    dx, dy = 0.1, 0.1
-    rlevels, dblderlimit = 8, 0.05
+    dx, dy = 0.25, 0.25
+    rlevels, dblderlimit = 4, 0.005
     r = I.integrator_test(ox, oy, # Origin
                           ex, ey, # End
                           dx, dy, # dx, dy
                           rlevels, dblderlimit) # refinement_levels, dblder_limit
 
     if do_plot is True:
-        print(abs((r / np.pi) - 1) * 100)
+        print('Integration error is :', round(((r / np.pi) - 1) * 100, 2), '%')
         mesh_expfun(ox, oy, # Origin
                     ex, ey, # End
                     dx, dy, # dx, dy
@@ -196,8 +196,6 @@ def mesh_expfun(ox, oy, # Origin
     plt.show()
 
 if __name__ == '__main__':
-    test_integration_expfun(True)
-    exit(0)
     do_plot, do_print = False, False
     if '-print' in sys.argv:
         do_print = True
