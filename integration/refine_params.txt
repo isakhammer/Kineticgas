@@ -1,0 +1,499 @@
+TEST RUNS DURING REFINING PROCESS OF INTEGRATION MESH PARAMETERS
+x-axis is g, y-axis is b
+
+Important finds:
+
+    Far higher resolution is required along the b-axis than the g-axis, but refinement limit must be low
+        ##################################################
+
+            l = 9, r = 5
+            Origin : (1e-07, 1e-07), End : (7.5, 5)
+            dx = 0.3, dy = 0.05
+            Refinement : 8, limit : 0.5
+
+            Analytic integral : 360.0
+            Numeric integral : 359.4
+            Error : -0.17 %
+
+            Computation time : 0.3499 s
+            Evaluations : 506
+            Total points : 2727
+            Time per evaluation : 0.6697 ms
+            Time per sub-integral : 0.385 ms
+            Time per pre-computed point : 0.005 ms
+
+        ##################################################
+
+            l = 9, r = 5
+            Origin : (1e-07, 1e-07), End : (7.5, 5)
+            dx = 0.1, dy = 0.1
+            Refinement : 8, limit : 5
+
+            Analytic integral : 360.0
+            Numeric integral : 335.9
+            Error : -6.68 %
+
+            Computation time : 0.2208 s
+            Evaluations : 384
+            Total points : 1872
+            Time per evaluation : 0.56 ms
+            Time per sub-integral : 0.3538 ms
+            Time per pre-computed point : 0.0038 ms
+
+        ##################################################
+
+    db * refinement_level should be lower than 0.5. Otherwise the integral "jumps" past the hard fall-off at b = sigma
+        and grossly overestimates the integral, despite db being relatively small.
+
+        ##################################################
+
+            l = 9, r = 5
+            Origin : (1e-07, 1e-07), End : (7.5, 5)
+            dx = 0.3, dy = 0.1
+            Refinement : 8, limit : 0.5
+
+            Analytic integral : 360.0
+            Numeric integral : 565.4
+            Error : 57.05 %
+
+            Computation time : 0.1846 s
+            Evaluations : 291
+            Total points : 1458
+            Time per evaluation : 0.6145 ms
+            Time per sub-integral : 0.3798 ms
+            Time per pre-computed point : 0.005 ms
+
+        ##################################################
+
+l = 9, r = 5
+Origin : (1e-07, 1e-07), End : (7.5, 5)
+dx = 0.1, dy = 0.1
+Refinement : 8, limit : 0.01
+
+Analytic integral : 360.0
+Numeric integral : 325.5
+Error : -9.58 %
+
+Computation time : 0.2415 s
+Evaluations : 472
+Total points : 2115
+Time per evaluation : 0.5 ms
+Time per sub-integral : 0.3425 ms
+Time per pre-computed point : 0.0033 ms
+
+##################################################
+
+l = 9, r = 5
+Origin : (1e-07, 1e-07), End : (7.5, 5)
+dx = 0.05, dy = 0.05
+Refinement : 16, limit : 0.01
+
+Analytic integral : 360.0
+Numeric integral : 338.7
+Error : -5.91 %
+
+Computation time : 0.5 s
+Evaluations : 752
+Total points : 3735
+Time per evaluation : 0.6477 ms
+Time per sub-integral : 0.4016 ms
+Time per pre-computed point : 0.0043 ms
+
+##################################################
+
+l = 9, r = 5
+Origin : (1e-07, 1e-07), End : (7.5, 5)
+dx = 0.05, dy = 0.05
+Refinement : 16, limit : 0.05
+
+Analytic integral : 360.0
+Numeric integral : 338.7
+Error : -5.91 %
+
+Computation time : 0.5665 s
+Evaluations : 752
+Total points : 3735
+Time per evaluation : 0.7284 ms
+Time per sub-integral : 0.455 ms
+Time per pre-computed point : 0.0063 ms
+
+##################################################
+
+l = 9, r = 5
+Origin : (1e-07, 1e-07), End : (7.5, 5)
+dx = 0.05, dy = 0.05
+Refinement : 16, limit : 0.15
+
+Analytic integral : 360.0
+Numeric integral : 338.7
+Error : -5.91 %
+
+Computation time : 0.4426 s
+Evaluations : 707
+Total points : 3546
+Time per evaluation : 0.6083 ms
+Time per sub-integral : 0.3744 ms
+Time per pre-computed point : 0.0044 ms
+
+##################################################
+
+l = 9, r = 5
+Origin : (1e-07, 1e-07), End : (7.5, 5)
+dx = 0.05, dy = 0.05
+Refinement : 16, limit : 0.4
+
+Analytic integral : 360.0
+Numeric integral : 338.7
+Error : -5.91 %
+
+Computation time : 0.5278 s
+Evaluations : 707
+Total points : 3546
+Time per evaluation : 0.7227 ms
+Time per sub-integral : 0.4465 ms
+Time per pre-computed point : 0.0059 ms
+
+##################################################
+
+l = 9, r = 5
+Origin : (1e-07, 1e-07), End : (7.5, 5)
+dx = 0.05, dy = 0.05
+Refinement : 16, limit : 0.4
+
+Analytic integral : 360.0
+Numeric integral : 340.5
+Error : -5.43 %
+
+Computation time : 0.3906 s
+Evaluations : 602
+Total points : 3438
+Time per evaluation : 0.6274 ms
+Time per sub-integral : 0.3408 ms
+Time per pre-computed point : 0.0046 ms
+
+##################################################
+
+l = 9, r = 5
+Origin : (1e-07, 1e-07), End : (7.5, 5)
+dx = 0.1, dy = 0.1
+Refinement : 8, limit : 0.4
+
+Analytic integral : 360.0
+Numeric integral : 340.5
+Error : -5.43 %
+
+Computation time : 0.38 s
+Evaluations : 602
+Total points : 3438
+Time per evaluation : 0.6103 ms
+Time per sub-integral : 0.3316 ms
+Time per pre-computed point : 0.0044 ms
+
+##################################################
+
+l = 9, r = 5
+Origin : (1e-07, 1e-07), End : (7.5, 5)
+dx = 0.1, dy = 0.1
+Refinement : 8, limit : 1
+
+Analytic integral : 360.0
+Numeric integral : 342.4
+Error : -4.88 %
+
+Computation time : 0.3794 s
+Evaluations : 537
+Total points : 2844
+Time per evaluation : 0.6825 ms
+Time per sub-integral : 0.4002 ms
+Time per pre-computed point : 0.0056 ms
+
+##################################################
+
+l = 9, r = 5
+Origin : (1e-07, 1e-07), End : (7.5, 5)
+dx = 0.1, dy = 0.1
+Refinement : 8, limit : 2
+
+Analytic integral : 360.0
+Numeric integral : 341.9
+Error : -5.04 %
+
+Computation time : 0.2767 s
+Evaluations : 457
+Total points : 2223
+Time per evaluation : 0.5888 ms
+Time per sub-integral : 0.3734 ms
+Time per pre-computed point : 0.0043 ms
+
+##################################################
+
+l = 9, r = 5
+Origin : (1e-07, 1e-07), End : (7.5, 5)
+dx = 0.2, dy = 0.2
+Refinement : 8, limit : 2
+
+Analytic integral : 360.0
+Numeric integral : 0.0
+Error : -100.0 %
+
+Computation time : 0.0249 s
+Evaluations : 44
+Total points : 132
+Time per evaluation : 0.5496 ms
+Time per sub-integral : 0.5653 ms
+Time per pre-computed point : 0.0078 ms
+
+##################################################
+
+l = 9, r = 5
+Origin : (1e-07, 1e-07), End : (7.5, 5)
+dx = 0.2, dy = 0.2
+Refinement : 8, limit : 2
+
+Analytic integral : 360.0
+Numeric integral : 0.0
+Error : -100.0 %
+
+Computation time : 0.0228 s
+Evaluations : 44
+Total points : 132
+Time per evaluation : 0.5045 ms
+Time per sub-integral : 0.5183 ms
+Time per pre-computed point : 0.0069 ms
+
+##################################################
+
+l = 9, r = 5
+Origin : (1e-07, 1e-07), End : (7.5, 5)
+dx = 0.2, dy = 0.2
+Refinement : 4, limit : 2
+
+Analytic integral : 360.0
+Numeric integral : 305.8
+Error : -15.07 %
+
+Computation time : 0.1432 s
+Evaluations : 298
+Total points : 1440
+Time per evaluation : 0.4668 ms
+Time per sub-integral : 0.2983 ms
+Time per pre-computed point : 0.0036 ms
+
+##################################################
+
+l = 9, r = 5
+Origin : (1e-07, 1e-07), End : (7.5, 5)
+dx = 0.1, dy = 0.1
+Refinement : 8, limit : 5
+
+Analytic integral : 360.0
+Numeric integral : 335.9
+Error : -6.68 %
+
+Computation time : 0.2208 s
+Evaluations : 384
+Total points : 1872
+Time per evaluation : 0.56 ms
+Time per sub-integral : 0.3538 ms
+Time per pre-computed point : 0.0038 ms
+
+##################################################
+
+l = 9, r = 5
+Origin : (1e-07, 1e-07), End : (7.5, 5)
+dx = 0.3, dy = 0.05
+Refinement : 8, limit : 2
+
+Analytic integral : 360.0
+Numeric integral : 389.2
+Error : 8.12 %
+
+Computation time : 0.3016 s
+Evaluations : 458
+Total points : 2241
+Time per evaluation : 0.6402 ms
+Time per sub-integral : 0.4038 ms
+Time per pre-computed point : 0.0047 ms
+
+##################################################
+
+l = 9, r = 5
+Origin : (1e-07, 1e-07), End : (7.5, 5)
+dx = 0.25, dy = 0.05
+Refinement : 8, limit : 2
+
+Analytic integral : 360.0
+Numeric integral : 359.6
+Error : -0.12 %
+
+Computation time : 0.3459 s
+Evaluations : 515
+Total points : 2673
+Time per evaluation : 0.6503 ms
+Time per sub-integral : 0.3882 ms
+Time per pre-computed point : 0.0051 ms
+
+##################################################
+
+l = 9, r = 5
+Origin : (1e-07, 1e-07), End : (7.5, 5)
+dx = 0.3, dy = 0.05
+Refinement : 8, limit : 0.5
+
+Analytic integral : 360.0
+Numeric integral : 359.4
+Error : -0.17 %
+
+Computation time : 0.3499 s
+Evaluations : 506
+Total points : 2727
+Time per evaluation : 0.6697 ms
+Time per sub-integral : 0.385 ms
+Time per pre-computed point : 0.005 ms
+
+##################################################
+
+l = 9, r = 5
+Origin : (1e-07, 1e-07), End : (7.5, 5)
+dx = 0.3, dy = 0.1
+Refinement : 8, limit : 0.5
+
+Analytic integral : 360.0
+Numeric integral : 565.4
+Error : 57.05 %
+
+Computation time : 0.1846 s
+Evaluations : 291
+Total points : 1458
+Time per evaluation : 0.6145 ms
+Time per sub-integral : 0.3798 ms
+Time per pre-computed point : 0.005 ms
+
+##################################################
+
+l = 9, r = 5
+Origin : (1e-07, 1e-07), End : (7.5, 5)
+dg = 0.3, db = 0.075
+Refinement : 8, limit : 0.5
+
+Analytic integral : 360.0
+Numeric integral : 387.4
+Error : 7.62 %
+
+Computation time : 0.2269 s
+Evaluations : 343
+Total points : 1728
+Time per evaluation : 0.6414 ms
+Time per sub-integral : 0.3939 ms
+Time per pre-computed point : 0.005 ms
+
+##################################################
+
+l = 9, r = 5
+Origin : (1e-07, 1e-07), End : (7.5, 5)
+dg = 0.3, db = 0.05
+Refinement : 8, limit : 0.5
+
+Analytic integral : 360.0
+Numeric integral : 359.4
+Error : -0.17 %
+
+Computation time : 0.3349 s
+Evaluations : 506
+Total points : 2727
+Time per evaluation : 0.6429 ms
+Time per sub-integral : 0.3684 ms
+Time per pre-computed point : 0.0043 ms
+
+##################################################
+
+l = 9, r = 5
+Origin : (1e-07, 1e-07), End : (7.5, 5)
+dg = 0.45, db = 0.05
+Refinement : 8, limit : 0.1
+
+Analytic integral : 360.0
+Numeric integral : 383.3
+Error : 6.46 %
+
+Computation time : 0.2695 s
+Evaluations : 395
+Total points : 1974
+Time per evaluation : 0.6605 ms
+Time per sub-integral : 0.4096 ms
+Time per pre-computed point : 0.0055 ms
+
+##################################################
+
+l = 9, r = 5
+Origin : (1e-07, 1e-07), End : (7.5, 5)
+dg = 0.45, db = 0.05
+Refinement g, b : 8, 4, limit : 0.1
+
+Analytic integral : 360.0
+Numeric integral : 388.1
+Error : 7.81 %
+
+Computation time : 0.2989 s
+Evaluations : 457
+Total points : 1509
+Time per evaluation : 0.635 ms
+Time per sub-integral : 0.5943 ms
+Time per pre-computed point : 0.0083 ms
+
+##################################################
+
+l = 9, r = 5
+Origin : (1e-07, 1e-07), End : (7.5, 5)
+dg = 0.45, db = 0.05
+Refinement g, b : 8, 2, limit : 0.1
+
+Analytic integral : 360.0
+Numeric integral : 388.7
+Error : 7.98 %
+
+Computation time : 0.3994 s
+Evaluations : 601
+Total points : 1692
+Time per evaluation : 0.6456 ms
+Time per sub-integral : 0.7082 ms
+Time per pre-computed point : 0.0105 ms
+
+##################################################
+
+l = 9, r = 5
+Origin : (1e-07, 1e-07), End : (7.5, 5)
+dg = 0.45, db = 0.05
+Refinement g, b : 2, 8, limit : 0.1
+
+Analytic integral : 360.0
+Numeric integral : 354.5
+Error : -1.52 %
+
+Computation time : 0.3134 s
+Evaluations : 466
+Total points : 1356
+Time per evaluation : 0.6524 ms
+Time per sub-integral : 0.6934 ms
+Time per pre-computed point : 0.0105 ms
+
+##################################################
+
+l = 9, r = 5
+Origin : (1e-07, 1e-07), End : (7.5, 5)
+dg = 0.45, db = 0.05
+Refinement g, b : 4, 8, limit : 0.1
+
+Analytic integral : 360.0
+Numeric integral : 368.9
+Error : 2.47 %
+
+Computation time : 0.2736 s
+Evaluations : 414
+Total points : 1287
+Time per evaluation : 0.6407 ms
+Time per sub-integral : 0.6379 ms
+Time per pre-computed point : 0.0096 ms
+
+##################################################
+
