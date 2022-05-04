@@ -33,11 +33,29 @@ void mesh_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, std::shar
         Point sub_origin = *p3;
         int sub_Nx_origin = Nx;
         int sub_Ny_origin = Ny;
-        int sub_Nxsteps = Nxsteps / 2;
-        int sub_Nysteps = Nysteps / 2;
+        int sub_Nxsteps = Nxsteps;
+        int sub_Nysteps = Nysteps;
         int sub_Nx_end = Nx + Nxsteps;
         int sub_Ny_end = Ny + Nysteps;
-        double sub_subdomain_dblder_limit = dblder * 1.1;
+        double sub_subdomain_dblder_limit = subdomain_dblder_limit;
+        if (abs(fxx) > subdomain_dblder_limit && (abs(fyy) < subdomain_dblder_limit) && (abs(Nxsteps) > 1)){ // Only need to refine x
+            sub_Nxsteps = sub_Nxsteps / 2;
+            sub_subdomain_dblder_limit = sub_subdomain_dblder_limit / pow(hx, 3);
+        }
+        else if (abs(fyy) > sub_subdomain_dblder_limit && (abs(fxx) < subdomain_dblder_limit) && (abs(Nysteps) > 1)){
+            sub_Nysteps = sub_Nysteps / 2;
+            sub_subdomain_dblder_limit = sub_subdomain_dblder_limit / pow(hy, 3);
+        }
+        else { // Refine x if possible and y if possible
+            if (abs(Nxsteps) > 1) {
+                sub_Nxsteps = sub_Nxsteps / 2;
+                sub_subdomain_dblder_limit = sub_subdomain_dblder_limit / pow(hx, 3);
+            }
+            if (abs(Nysteps) > 1){
+                sub_Nysteps = sub_Nysteps / 2;
+                sub_subdomain_dblder_limit = sub_subdomain_dblder_limit / pow(hy, 3);
+            }
+        }
 
         mesh_adaptive(sub_origin,
                        sub_Nx_origin, sub_Ny_origin,
@@ -48,13 +66,6 @@ void mesh_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, std::shar
                        evaluated_points,
                        arg_ij, arg_T, arg_l, arg_r,
                        func, points);
-        // Set all points to the gridpoint at the lower right corner of the subdomain that was just integrated (if Nxsteps is positive, otherwise to the lower left corner)
-        //p2 = p3;
-        //p1 = p2;
-        //*p3 += xstep + ystep; // Only move along x-axis
-        //Nx += Nxsteps;
-        //eval_function(p3, Nx, Ny, arg_ij, arg_T, arg_l, arg_r, func, evaluated_points);
-        //points.push_back(Point(*p3));
 
         p1 = std::move(p2);
         p2 = std::move(p3);
@@ -203,11 +214,29 @@ void trisurf_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, std::s
         Point sub_origin = *p3;
         int sub_Nx_origin = Nx;
         int sub_Ny_origin = Ny;
-        int sub_Nxsteps = Nxsteps / 2;
-        int sub_Nysteps = Nysteps / 2;
+        int sub_Nxsteps = Nxsteps;
+        int sub_Nysteps = Nysteps;
         int sub_Nx_end = Nx + Nxsteps;
         int sub_Ny_end = Ny + Nysteps;
-        double sub_subdomain_dblder_limit = dblder * 1.1;
+        double sub_subdomain_dblder_limit = subdomain_dblder_limit;
+        if (abs(fxx) > subdomain_dblder_limit && (abs(fyy) < subdomain_dblder_limit) && (abs(Nxsteps) > 1)){ // Only need to refine x
+            sub_Nxsteps = sub_Nxsteps / 2;
+            sub_subdomain_dblder_limit = sub_subdomain_dblder_limit / pow(hx, 3);
+        }
+        else if (abs(fyy) > sub_subdomain_dblder_limit && (abs(fxx) < subdomain_dblder_limit) && (abs(Nysteps) > 1)){
+            sub_Nysteps = sub_Nysteps / 2;
+            sub_subdomain_dblder_limit = sub_subdomain_dblder_limit / pow(hy, 3);
+        }
+        else { // Refine x if possible and y if possible
+            if (abs(Nxsteps) > 1) {
+                sub_Nxsteps = sub_Nxsteps / 2;
+                sub_subdomain_dblder_limit = sub_subdomain_dblder_limit / pow(hx, 3);
+            }
+            if (abs(Nysteps) > 1){
+                sub_Nysteps = sub_Nysteps / 2;
+                sub_subdomain_dblder_limit = sub_subdomain_dblder_limit / pow(hy, 3);
+            }
+        }
 
         trisurf_adaptive(sub_origin,
                            sub_Nx_origin, sub_Ny_origin,
@@ -295,7 +324,7 @@ void trisurf_adaptive(const Point& origin,
 
 std::vector<std::vector<std::vector<double>>> trisurf(const Point& origin, const Point& end,
                                                         const double& dx, const double& dy,
-                                                        const int& refinement_levels,
+                                                        const int& refinement_levels_x, const int& refinement_levels_y,
                                                         const double& subdomain_dblder_limit,
                                                         const int& arg_ij, const double& arg_T, const int& arg_l, const int& arg_r,
                                                         std::function<double(int, double, double, double, int, int)> func){
@@ -305,8 +334,8 @@ std::vector<std::vector<std::vector<double>>> trisurf(const Point& origin, const
     double delta_y = end.y - origin.y;
     int Nx_end = (int) (delta_x / dx + 0.5);
     int Ny_end = (int) (delta_y / dy + 0.5);
-    int Nxsteps = refinement_levels;
-    int Nysteps = refinement_levels;
+    int Nxsteps = refinement_levels_x;
+    int Nysteps = refinement_levels_y;
     std::map<std::pair<int, int>, const double> evaluated_points;
     std::vector<std::vector<Point>> surf;
     trisurf_adaptive(origin,
@@ -342,7 +371,7 @@ double integrator_test(double origin_x, double origin_y, double end_x, double en
     int ij{1}, r{1}, l{1}; // Dummy values
     double T{1}; // Dummy values
     Point origin{origin_x, origin_y}, end{end_x, end_y};
-    double val = integrate2d(origin, end, dx, dy, refinement_levels, subdomain_dblder_limit, ij, T, r, l, &testfun);
+    double val = integrate2d(origin, end, dx, dy, refinement_levels, refinement_levels, subdomain_dblder_limit, ij, T, r, l, &testfun);
     double a = -log(testfun(ij, T, 1, 0, r, l));
     return val; // Integral of testfun on (-inf, inf) is pi / a
 }
@@ -352,7 +381,7 @@ double integrator_test_linear(double origin_x, double origin_y, double end_x, do
     int ij{1}, r{1}, l{1}; // Dummy values
     double T{1}; // Dummy values
     Point origin{origin_x, origin_y}, end{end_x, end_y};
-    double val = integrate2d(origin, end, dx, dy, refinement_levels, subdomain_dblder_limit, ij, T, r, l, &testfun_linear);
+    double val = integrate2d(origin, end, dx, dy, refinement_levels, refinement_levels, subdomain_dblder_limit, ij, T, r, l, &testfun_linear);
     return val;
 }
 

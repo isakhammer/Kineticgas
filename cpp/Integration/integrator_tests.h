@@ -74,7 +74,7 @@ void trisurf_adaptive(const Point& origin,
 */
 std::vector<std::vector<std::vector<double>>> trisurf(const Point& origin, const Point& end,
                                                         const double& dx, const double& dy,
-                                                        const int& refinement_levels,
+                                                        const int& refinement_levels_x, const int& refinement_levels_y,
                                                         const double& subdomain_dblder_limit,
                                                         const int& arg_ij, const double& arg_T, const int& arg_l, const int& arg_r,
                                                         std::function<double(int, double, double, double, int, int)> func);

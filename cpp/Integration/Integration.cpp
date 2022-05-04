@@ -147,23 +147,49 @@ void integration_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, st
     Point ystep{0, dy * Nysteps};
     Point xstep{dx * Nxsteps, - dy * Nysteps};
 
-    double f = eval_function(*p3, Nx, Ny, arg_ij, arg_T, arg_l, arg_r, func, evaluated_points);
-    double f1x = eval_function(*p3 + Point{dx * abs(Nxsteps), 0}, Nx + abs(Nxsteps), Ny, arg_ij, arg_T, arg_l, arg_r, func, evaluated_points);
-    double f2x = eval_function(*p3 + Point{2 * dx * abs(Nxsteps), 0}, Nx + 2 * abs(Nxsteps), Ny, arg_ij, arg_T, arg_l, arg_r, func, evaluated_points);
-    double f1y = eval_function(*p3 + Point{0, dy * abs(Nysteps)}, Nx, Ny + abs(Nysteps), arg_ij, arg_T, arg_l, arg_r, func, evaluated_points);
-    double f2y = eval_function(*p3 + Point{0, 2 * dy * abs(Nysteps)}, Nx, Ny + 2 * abs(Nysteps), arg_ij, arg_T, arg_l, arg_r, func, evaluated_points);
-    double d2fdx2 = (f - 2 * f1x + f2x) / pow(dx * Nxsteps, 2);
-    double d2fdy2 = (f - 2 * f1y + f2y) / pow(dy * Nysteps, 2);
+    double hx = abs(dx * Nxsteps);
+    double hy = abs(dy * Nysteps);
 
-    if ((abs(d2fdx2) + abs(d2fdy2) > subdomain_dblder_limit) && (abs(Nxsteps) > 1) && (abs(Nysteps) > 1)){ // Increase refinement
+    double f = eval_function(*p3, Nx, Ny, arg_ij, arg_T, arg_l, arg_r, func, evaluated_points);
+    double f1x = eval_function(*p3 + Point{hx, 0}, Nx + abs(Nxsteps), Ny, arg_ij, arg_T, arg_l, arg_r, func, evaluated_points);
+    double f2x = eval_function(*p3 + Point{2 * hx, 0}, Nx + 2 * abs(Nxsteps), Ny, arg_ij, arg_T, arg_l, arg_r, func, evaluated_points);
+    double f1y = eval_function(*p3 + Point{0, hy}, Nx, Ny + abs(Nysteps), arg_ij, arg_T, arg_l, arg_r, func, evaluated_points);
+    double f2y = eval_function(*p3 + Point{0, 2 * hy}, Nx, Ny + 2 * abs(Nysteps), arg_ij, arg_T, arg_l, arg_r, func, evaluated_points);
+    double f1x1y = eval_function(*p3 + Point{hx, hy}, Nx + abs(Nxsteps), Ny + abs(Nysteps), arg_ij, arg_T, arg_l, arg_r, func, evaluated_points);
+    double f2x2y = eval_function(*p3 + Point{2 * hx, 2 * hy}, Nx + 2 * abs(Nxsteps), Ny + 2 * abs(Nysteps), arg_ij, arg_T, arg_l, arg_r, func, evaluated_points);
+    double fxx = (f - 2 * f1x + f2x) / pow(dx * Nxsteps, 2);
+    double fyy = (f - 2 * f1y + f2y) / pow(dy * Nysteps, 2);
+    double fxy = (f2x2y - 2 * f1x1y + f - pow(hx, 2) * fxx - pow(hy, 2) * fyy) / (2 * hx * hy);
+
+    double dblder = abs(fxx) + abs(fyy) + abs(fxy);
+
+    if ((dblder > subdomain_dblder_limit) && ((abs(Nxsteps) > 1) || (abs(Nysteps) > 1))){ // Increase refinement
         Point sub_origin = *p3;
         int sub_Nx_origin = Nx;
         int sub_Ny_origin = Ny;
-        int sub_Nxsteps = Nxsteps / 2;
-        int sub_Nysteps = Nysteps / 2;
+        int sub_Nxsteps = Nxsteps;
+        int sub_Nysteps = Nysteps;
         int sub_Nx_end = Nx + Nxsteps;
         int sub_Ny_end = Ny + Nysteps;
-        double sub_subdomain_dblder_limit = subdomain_dblder_limit * 2;
+        double sub_subdomain_dblder_limit = subdomain_dblder_limit;
+        if (abs(fxx) > subdomain_dblder_limit && (abs(fyy) < subdomain_dblder_limit) && (abs(Nxsteps) > 1)){ // Only need to refine x
+            sub_Nxsteps = sub_Nxsteps / 2;
+            sub_subdomain_dblder_limit = sub_subdomain_dblder_limit * 2; /// pow(hx, 3);
+        }
+        else if (abs(fyy) > sub_subdomain_dblder_limit && (abs(fxx) < subdomain_dblder_limit) && (abs(Nysteps) > 1)){
+            sub_Nysteps = sub_Nysteps / 2;
+            sub_subdomain_dblder_limit = sub_subdomain_dblder_limit * 2; /// pow(hy, 3);
+        }
+        else { // Refine x if possible and y if possible
+            if (abs(Nxsteps) > 1) {
+                sub_Nxsteps = sub_Nxsteps / 2;
+                sub_subdomain_dblder_limit = sub_subdomain_dblder_limit / pow(hx, 3);
+            }
+            if (abs(Nysteps) > 1){
+                sub_Nysteps = sub_Nysteps / 2;
+                sub_subdomain_dblder_limit = sub_subdomain_dblder_limit / pow(hy, 3);
+            }
+        }
         integral += integrate_adaptive(sub_origin,
                                        sub_Nx_origin, sub_Ny_origin,
                                        sub_Nx_end, sub_Ny_end,
@@ -253,7 +279,7 @@ double integrate_adaptive(const Point& origin,
 
 double integrate2d(const Point& origin, const Point& end,
                     const double& dx, const double& dy,
-                    const int& refinement_levels,
+                    const int& refinement_levels_x, const int& refinement_levels_y,
                     const double& subdomain_dblder_limit,
                     const int& arg_ij, const double& arg_T, const int& arg_l, const int& arg_r,
                     std::function<double(int, double, double, double, int, int)> func){
@@ -263,8 +289,8 @@ double integrate2d(const Point& origin, const Point& end,
     double delta_y = end.y - origin.y;
     int Nx_end = (int) (delta_x / dx + 0.5);
     int Ny_end = (int) (delta_y / dy + 0.5);
-    int Nxsteps = refinement_levels;
-    int Nysteps = refinement_levels;
+    int Nxsteps = refinement_levels_x;
+    int Nysteps = refinement_levels_y;
     std::map<std::pair<int, int>, const double> evaluated_points;
 
     #ifdef DEBUG
