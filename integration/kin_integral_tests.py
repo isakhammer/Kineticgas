@@ -37,10 +37,10 @@ def plot_triangluation(r=1, l=1):
     endxy = (7.5, 5)
     origin = I.Point(originxy[0], originxy[1])
     end = I.Point(endxy[0], endxy[1])
-    dx, dy = 0.45, 0.05
+    dx, dy = 0.5, 0.05
     refinement_levels_x = 4
-    refinement_levels_y = 8
-    subdomain_dblder_limit = 0.1
+    refinement_levels_y = 16
+    subdomain_dblder_limit = 1e-5
 
     N_EVAL = 0
     T_EVAL = 0
@@ -142,8 +142,12 @@ def compare_to_HS():
 #integrage_kinfunc(r=1, l=1)
 #compare_to_HS()
 
+ll = [1, 5, 9]
+rl = [1, 5, 9]
 
-plot_triangluation(r=5, l=9)
+for l in ll:
+    for r in rl:
+        plot_triangluation(r=r, l=l)
 exit(0)
 #xs = [1, 1, 3]
 #ys = [1, 2, 1]

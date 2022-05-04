@@ -162,6 +162,8 @@ void integration_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, st
     double fxy = (f2x2y - 2 * f1x1y + f - pow(hx, 2) * fxx - pow(hy, 2) * fyy) / (2 * hx * hy);
 
     double dblder = abs(fxx) + abs(fyy) + abs(fxy);
+    double xder = abs(fxx) + abs(fxy);
+    double yder = abs(fyy) + abs(fxy);
 
     if ((dblder > subdomain_dblder_limit) && ((abs(Nxsteps) > 1) || (abs(Nysteps) > 1))){ // Increase refinement
         Point sub_origin = *p3;
@@ -172,11 +174,11 @@ void integration_step(std::shared_ptr<Point>& p1, std::shared_ptr<Point>& p2, st
         int sub_Nx_end = Nx + Nxsteps;
         int sub_Ny_end = Ny + Nysteps;
         double sub_subdomain_dblder_limit = subdomain_dblder_limit;
-        if (abs(fxx) > subdomain_dblder_limit && (abs(fyy) < subdomain_dblder_limit) && (abs(Nxsteps) > 1)){ // Only need to refine x
+        if (abs(fxx) > subdomain_dblder_limit && (abs(fyy) < subdomain_dblder_limit) && (abs(fxy) < subdomain_dblder_limit) && (abs(Nxsteps) > 1)){ // Only need to refine x
             sub_Nxsteps = sub_Nxsteps / 2;
             sub_subdomain_dblder_limit = sub_subdomain_dblder_limit * 2; /// pow(hx, 3);
         }
-        else if (abs(fyy) > sub_subdomain_dblder_limit && (abs(fxx) < subdomain_dblder_limit) && (abs(Nysteps) > 1)){
+        else if (abs(fyy) > sub_subdomain_dblder_limit && (abs(fxx) < subdomain_dblder_limit) && (abs(fxy) < subdomain_dblder_limit) && (abs(Nysteps) > 1)){
             sub_Nysteps = sub_Nysteps / 2;
             sub_subdomain_dblder_limit = sub_subdomain_dblder_limit * 2; /// pow(hy, 3);
         }
