@@ -17,7 +17,13 @@ def test_line(do_plot=False):
     p2 = I.Point(x[1], y[1])
     line = I.get_line(p1, p2)
 
-    if do_plot is True:
+    r, v = 0, 0
+    if abs(line.a - 1) > FLTEPS:
+        r, v = 10, line.a
+    elif abs(line.b - 1) > FLTEPS:
+        r, v = 11, line.b
+
+    if do_plot is True and (r != 0 or '-force' in sys.argv):
         f = lambda x_val: line.a * x_val + line.b
         x_ax = np.linspace(0.9 * x[0], 1.1 * x[1])
 
@@ -25,12 +31,7 @@ def test_line(do_plot=False):
         plt.plot(x_ax, f(x_ax))
         plt.show()
 
-    if abs(line.a - 1) > FLTEPS:
-        return 10, line.a
-    elif abs(line.b - 1) > FLTEPS:
-        return 11, line.b
-
-    return 0, 0
+    return r, v
 
 def test_plane(do_plot=False):
     x = [1, 2, 2]
@@ -41,14 +42,15 @@ def test_plane(do_plot=False):
     p3 = I.Point(x[2], y[2], z[2])
     plane = I.get_plane(p1, p2, p3)
 
+    r, v = 0, 0
     if abs(plane.A - 6) > FLTEPS:
-        return 20, plane.A
+        r, v = 20, plane.A
     elif abs(plane.B - (-6)) > FLTEPS:
-        return 21, plane.B
+        r, v = 21, plane.B
     elif abs(plane.C) > FLTEPS:
-        return 22, plane.C
+        r, v = 22, plane.C
 
-    if do_plot is True:
+    if do_plot is True and (r != 0 or '-force' in sys.argv):
         f = lambda x_val, y_val: plane.A * x_val + plane.B * y_val + plane.C
 
         x_ax = np.linspace(0.9 * min(x), 1.1 * max(x))
@@ -65,7 +67,7 @@ def test_plane(do_plot=False):
         ax.set_ylabel('y')
         plt.show()
 
-    return 0, 0
+    return r, v
 
 def plot_plane(p1, p2, p3):
     x = [p1.x, p2.x, p3.x]
@@ -110,12 +112,15 @@ def test_integrate_plane(do_plot=False):
     p2 = I.Point(x[1], y[1], z[1])
     p3 = I.Point(x[2], y[2], z[2])
 
+    r, v = 0, 0
+
     integ = I.integrate_plane(p1, p2, p3) # V = (1 / 3) * A * h for en pyramide
     if abs(integ - 2) > FLTEPS:
-        if do_plot:
-            print(1, integ - 2)
-            plot_plane(p1, p2, p3)
-        return 30, integ
+        r, v = 30, integ
+
+    if do_plot is True and (r != 0 or '-force' in sys.argv):
+        print(30, integ - 2)
+        plot_plane(p1, p2, p3)
 
     x = [0, 1, 1]
     p1 = I.Point(x[0], y[0], z[0])
@@ -123,10 +128,11 @@ def test_integrate_plane(do_plot=False):
     p3 = I.Point(x[2], y[2], z[2])
     integ = I.integrate_plane(p1, p2, p3)
     if abs(integ - 1) > FLTEPS:
-        if do_plot:
-            print(2, integ - 1)
-            plot_plane(p1, p2, p3)
-        return 31, integ
+        r, v = 31, integ
+
+    if do_plot is True and (r != 0 or '-force' in sys.argv):
+        print(31, integ - 1)
+        plot_plane(p1, p2, p3)
 
     x = [1, 1, 2]
     p1 = I.Point(x[0], y[0], z[0])
@@ -134,41 +140,48 @@ def test_integrate_plane(do_plot=False):
     p3 = I.Point(x[2], y[2], z[2])
     integ = I.integrate_plane(p1, p2, p3)
     if abs(integ - 1) > FLTEPS:
-        if do_plot:
-            plot_plane(p1, p2, p3)
-        return 32, integ
+        r, v = 32, integ
 
-    return 0, 0
+    if do_plot is True and (r != 0 or '-force' in sys.argv):
+        print(32, integ - 1)
+        plot_plane(p1, p2, p3)
+
+    return r, v
 
 def test_integrate_2d_linear(do_plot=False):
-    r = I.integrator_test_linear(0, 0, # Origin
+    integ = I.integrator_test_linear(0, 0, # Origin
                                   10, 10, # End
                                   0.25, 0.25, # dx, dy
                                   4, 0.2)
-    if abs(r - 1e3) > FLTEPS: # Should be exact (sans floating point error)
-        return 40, r
-    return 0, 0
+    r, v = 0, 0
+    if abs(integ - 1e3) > FLTEPS: # Should be exact (sans floating point error)
+        r, v = 40, integ
+
+    return r, v
 
 def test_integration_expfun(do_plot=False):
     ox, oy = 0, 0
     ex, ey = 10, 10
-    dx, dy = 0.25, 0.25
-    rlevels, dblderlimit = 4, 0.005
-    r = I.integrator_test(ox, oy, # Origin
+    dx, dy = 0.2, 0.2
+    rlevels, dblderlimit = 4, 0.01
+    integ = I.integrator_test(ox, oy, # Origin
                           ex, ey, # End
                           dx, dy, # dx, dy
                           rlevels, dblderlimit) # refinement_levels, dblder_limit
 
-    if do_plot is True:
-        print('Integration error is :', round(((r / np.pi) - 1) * 100, 2), '%')
+    r, v = 0, 0
+    if abs((integ / np.pi) - 1) > 1e-2:
+        r, v = 40, integ
+
+    if do_plot is True and (r != 0 or '-force' in sys.argv):
+        print('Integration error is :', round(((r / np.pi) - 1) * 100, 2), '%, Integral value is', r / np.pi, 'pi')
         mesh_expfun(ox, oy, # Origin
                     ex, ey, # End
                     dx, dy, # dx, dy
                     rlevels, dblderlimit,
                     projection='3d')
-    if abs((r / np.pi) - 1) > 1e-2:
-        return 40, r
-    return 0, 0
+
+    return r, v
 
 def mesh_expfun(ox, oy, # Origin
                 ex, ey, # End
