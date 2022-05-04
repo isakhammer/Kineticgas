@@ -12,7 +12,7 @@ if '-debug' in sys.argv or '-Debug' in sys.argv or '-d' in sys.argv:
 else:
     from integration import Integration_r as I
 
-kin = KineticGas('AR,C1', potential='hs')
+kin = KineticGas('AR,C1', potential='mie')
 sigma = kin.sigma_ij[0, 0]
 T = 300
 chi_func = lambda g, b: kin.cpp_kingas.chi(1, T, g, b)
@@ -26,9 +26,9 @@ def integrate_kinfunc_via_py(r=1, l=1):
         return 2 * exp(-g**2) * g**(2 * r + 3) * (1 - (cos(chi_func(g, b * sigma)) ** l)) * b
 
     origin = I.Point(1e-5, 1e-5)
-    end = I.Point(3.5, 1.1)
-    dx, dy = 0.05, 0.05
-    refinement_levels = 4
+    end = I.Point(5, 4)
+    dx, dy = 0.1, 0.1
+    refinement_levels = 8
     subdomain_dblder_limit = 0.01
     mesh = I.mesh2d(origin, end, dx, dy, refinement_levels, subdomain_dblder_limit, 1, 300, l, r, kinfunc)
     neval = 0
@@ -45,10 +45,10 @@ def integrate_kinfunc_via_py(r=1, l=1):
     ax.plot(x, y, z, linewidth=0.5)
     ax.set_xlabel(r'$g$ [-]')
     ax.set_ylabel(r'$b$ [$\sigma$]')
-    ax.set_title(r'I = '+str(round(integral, 3))+r' $\sigma$')
+    ax.set_title(r'$W_{'+str(l)+','+str(r)+'}$ = '+str(round(integral, 3)))
     plt.show()
 
-def integrage_kinfunc(r=1, l=1):
+def integrate_kinfunc(r=1, l=1):
     t0 = time.process_time()
     integral = kin.cpp_kingas.w_spherical(1, T, l, r)
     t = time.process_time() - t0
@@ -57,5 +57,28 @@ def integrage_kinfunc(r=1, l=1):
     print('HS integral is :', kin.cpp_kingas.w_HS(1, T, l, r))
 
 
-integrage_kinfunc(r=1, l=1)
-integrate_kinfunc_via_py(r=1, l=1)
+def compare_to_HS():
+    r_list = [1, 2, 3]
+    l_list = [1, 2, 3]
+    rlist, llist = np.meshgrid(r_list, l_list)
+    numeric = np.empty_like(rlist, float)
+    analytic = np.empty_like(rlist, float)
+    for ri in range(len(r_list)):
+        for li in range(len(l_list)):
+            numeric[ri, li] = kin.cpp_kingas.w_spherical(1, T, l_list[li], r_list[ri])
+            analytic[ri, li] = kin.cpp_kingas.w_HS(1, T, l_list[li], r_list[ri])
+
+    fig = plt.figure()
+    ax = fig.add_subplot(projection='3d')
+    print(numeric, analytic)
+    ax.scatter(llist, rlist, 100 * (numeric - analytic) / analytic)
+    ax.set_xlabel(r'$r$ [-]')
+    ax.set_ylabel(r'$\ell$ [-]')
+    ax.set_zlabel(r'$\Delta_{HS}W_{r,\ell} / W^{HS}_{r,\ell}$ [%]')
+    ax.set_title('Relative deviation between numeric and analytic\ndimentionless collision integrals (%)')
+    plt.show()
+#integrage_kinfunc(r=1, l=1)
+#compare_to_HS()
+
+#
+integrate_kinfunc_via_py(r=1, l=6)

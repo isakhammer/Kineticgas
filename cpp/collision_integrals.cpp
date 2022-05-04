@@ -19,6 +19,7 @@ Common variables are:
 #pragma region // Collision integrals for various potentials
 
 double KineticGas::omega(int ij, int l, int r){
+    std::printf("Computing omega for (%i, %i)\n", l, r);
     double w = std::invoke(w_p, this, ij, T, l, r); // w_p is a pointer to the dimentionless collision integral corresponding to this.potential_mode
     if (ij == 1 || ij == 2){
         return pow(sigma[ij - 1], 2) * sqrt((PI * BOLTZMANN * T) / mole_weights[ij - 1]) * w;

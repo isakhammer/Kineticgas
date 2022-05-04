@@ -196,6 +196,8 @@ def mesh_expfun(ox, oy, # Origin
     plt.show()
 
 if __name__ == '__main__':
+    test_integration_expfun(True)
+    exit(0)
     do_plot, do_print = False, False
     if '-print' in sys.argv:
         do_print = True
