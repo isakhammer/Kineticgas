@@ -50,6 +50,7 @@ class KineticGas{
     double w_spherical_integrand(const int& ij, const double& T, 
                             const double& g, const double& b, 
                             const int& l, const int& r);
+    std::function<double(int, double, double, double, int, int)> w_spherical_integrand_export; // Will bind w_spherical_integrand to this function such that it can be passed to the external integration module
                             
     // Potential models
     double potential(int ij, double r, double theta); // Passes call to the potential corresponding to "potential_mode", using the pointer "potential_p"

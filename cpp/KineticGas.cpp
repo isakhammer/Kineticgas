@@ -1,3 +1,13 @@
+/*
+    Author : Vegard Gjeldvik Jervell
+
+    Contains :
+
+    Major base-functions for KineticGas. These functions are required for all versions, regardless of what
+    potential model they use. Contains summational expressions for the bracket integrals, and iterfaces to
+    get the matrices and vectors required to evaluate diffusion coefficients.
+*/
+
 #include "KineticGas.h"
 #include <vector>
 #include <algorithm>
@@ -12,8 +22,6 @@
 
 #define pprintf(flt) std::printf("%f", flt); std::printf("\n")
 #define pprinti(i) std::printf("%i", i); std::printf("\n")
-
-
 
 #pragma region // Global helper functions
 
@@ -204,6 +212,11 @@ KineticGas::KineticGas(std::vector<double> init_mole_weights,
     m2 = mole_weights[1];
     M1 = mole_weights[0] / m0;
     M2 = mole_weights[1] / m0;
+
+    w_spherical_integrand_export = std::bind(&KineticGas::w_spherical_integrand, this,
+                                            std::placeholders::_1, std::placeholders::_2,
+                                            std::placeholders::_3, std::placeholders::_4,
+                                            std::placeholders::_5, std::placeholders::_6);
 
     switch (potential_mode)
     {

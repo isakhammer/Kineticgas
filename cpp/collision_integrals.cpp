@@ -19,7 +19,6 @@ Common variables are:
 #pragma region // Collision integrals for various potentials
 
 double KineticGas::omega(int ij, int l, int r){
-    std::printf("Computing omega for (%i, %i)\n", l, r);
     double w = std::invoke(w_p, this, ij, T, l, r); // w_p is a pointer to the dimentionless collision integral corresponding to this.potential_mode
     if (ij == 1 || ij == 2){
         return pow(sigma[ij - 1], 2) * sqrt((PI * BOLTZMANN * T) / mole_weights[ij - 1]) * w;
@@ -36,23 +35,20 @@ double KineticGas::w_HS(int ij, double T, int l, int r){
     return 0.5 * f;
 }
 
-// Dimentionless collision integral for a Mie-potential
+// Dimentionless collision integral for a spherical-potential
 double KineticGas::w_spherical(int ij, double T, int l, int r){
     Point origin{1e-5, 1e-5};
-    Point end{5, 3};
-    double dx{0.05}, dy{0.05};
+    Point end{7.5, 5};
+    double dx{0.1}, dy{0.1};
     int refinement_levels{4};
     double subdomain_dblder_limit{0.05};
-    std::function<double(int, double, double, double, int, int)> f = std::bind(&KineticGas::w_spherical_integrand, this,
-                                                                                std::placeholders::_1, std::placeholders::_2, 
-                                                                                std::placeholders::_3, std::placeholders::_4,
-                                                                                std::placeholders::_5, std::placeholders::_6);
+
     return integrate2d(origin, end,
                         dx, dy,
                         refinement_levels,
                         subdomain_dblder_limit,
                         ij, T, l, r,
-                        f);
+                        w_spherical_integrand_export);
 }
 
 double KineticGas::w_spherical_integrand(const int& ij, const double& T, 
