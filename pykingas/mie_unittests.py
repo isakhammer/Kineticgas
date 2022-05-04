@@ -230,6 +230,7 @@ def run_tests(do_print=False, do_plot=False):
             if do_print:
                 print(r, val)
                 continue
+            print('Mie unittests failed with exit code :', r)
             return r
-
+    print('Mie unittests were successful!')
     return 0

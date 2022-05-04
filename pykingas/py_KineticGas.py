@@ -241,21 +241,11 @@ def test(plot=False, do_print=False):
     DT = kingas.thermal_diffusion(T, Vm, x)
     thermal_cond = kingas.thermal_conductivity(T, Vm, x)
 
-    # Compute values without saving to variables
+    # Compute values without saving to variables, with different BH-setting
     kingas.alpha_T0(T, Vm, x, BH=True)
     kingas.interdiffusion(T, Vm, x, BH=True)
     kingas.thermal_diffusion(T, Vm, x, BH=True)
     kingas.thermal_conductivity(T, Vm, x, BH=True)
-
-    # Recompute the first values, check that they are the same as before.
-    if any(abs(alpha_T0 - kingas.alpha_T0(T, Vm, x)) > FLT_EPS):
-        return 1
-    if abs(D12 - kingas.interdiffusion(T, Vm, x)) > FLT_EPS:
-        return 2
-    if abs(DT - kingas.thermal_diffusion(T, Vm, x)) > FLT_EPS:
-        return 3
-    if abs(thermal_cond - kingas.thermal_conductivity(T, Vm, x)) > FLT_EPS:
-        return 4
 
     if do_print is True:
         print('\n\nMixture is :', comps)
@@ -266,4 +256,21 @@ def test(plot=False, do_print=False):
         print('D12 =', D12, 'mol / m s')
         print('k =', thermal_cond, 'W / m K')
         print('S_T =', 1e3 * alpha_T0 / T, 'mK^{-1}')
-    return 0
+
+    # Recompute the first values, check that they are the same as before.
+    r = 0
+    if any(abs(alpha_T0 - kingas.alpha_T0(T, Vm, x)) > FLT_EPS):
+        r = 1
+    elif abs(D12 - kingas.interdiffusion(T, Vm, x)) > FLT_EPS:
+        r = 2
+    elif abs(DT - kingas.thermal_diffusion(T, Vm, x)) > FLT_EPS:
+        r = 3
+    elif abs(thermal_cond - kingas.thermal_conductivity(T, Vm, x)) > FLT_EPS:
+        r = 4
+
+    if r != 0:
+        print('Python test failed with exit code :', r)
+    else:
+        print('Python test was successful!')
+
+    return r

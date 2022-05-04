@@ -9,31 +9,19 @@ if '-test' in args:
     except:
         print('Missing module dependency pyctp (ThermoPack)')
         
-    from pykingas import mie_unittests, KineticGas, py_KineticGas as pykg
+    from pykingas import mie_unittests, collision_integral_unittests, KineticGas, py_KineticGas as pykg
 
-    if '-print' in args:
-        r = mie_unittests.run_tests(do_print=True)
-    elif '-plot' in args:
-        r = mie_unittests.run_tests(do_plot=True)
-    else:
-        r = mie_unittests.run_tests()
-    if r != 0:
-        print('Mie unittests failed with exit code :', r)
-        exit(r)
-    elif '-print' not in args and '-plot' not in args:
-            print('Mie unittests were successful!')
+    test_pkgs = [mie_unittests.run_tests, collision_integral_unittests.run_tests, pykg.test]
 
-    kin = KineticGas('AR,HE')
-    if '-print' in args:
-        r = pykg.test(do_print=True)
-    elif '-plot' in args:
-        r = pykg.test(plot=True)
-    else:
-        r = pykg.test()
-
-    if r != 0:
-        print('Python test failed with exit code :', r)
-    elif '-print' not in args and '-plot' not in args:
-        print('Python test was successful!')
-
-    exit(r)
+    for test in test_pkgs:
+        if '-print' in args and '-plot' in args:
+            r = test(do_print=True, do_plot=True)
+        elif '-print' in args:
+            r = test(do_print=True)
+        elif '-plot' in args:
+            r = test(do_plot=True)
+        else:
+            r = test()
+        if r != 0:
+            exit(r)
+    exit(0)
