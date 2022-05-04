@@ -18,6 +18,7 @@ PYBIND11_MODULE(Integration_d, handle){
     handle.def("integrate_plane", &integrate_plane_py);
     handle.def("integrate2d", &integrate2d);
     handle.def("mesh2d", &mesh2d);
+    handle.def("trisurf", &trisurf);
 
     handle.def("integrator_test", &integrator_test);
     handle.def("integrator_test_linear", &integrator_test_linear);
