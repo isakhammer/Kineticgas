@@ -6,13 +6,13 @@ kin = KineticGas('AR,C1', potential='hs')
 T = 300
 
 def test_w_vs_HS(do_plot=False):
-    r_list = [1, 2, 3, 4, 5, 6]
-    l_list = [1, 2, 3, 4, 5, 6]
+    r_list = [1, 2, 3]
+    l_list = [1, 2, 3]
     rlist, llist = np.meshgrid(r_list, l_list)
     numeric = np.empty_like(rlist, float)
     analytic = np.empty_like(rlist, float)
     print('Computing W-integrals ...')
-    print('-'*36)
+    print('-'*9)
     for ri in range(len(r_list)):
         for li in range(len(l_list)):
             print('#', end='')
@@ -22,10 +22,12 @@ def test_w_vs_HS(do_plot=False):
             if abs((numeric[ri, li] / analytic[ri, li]) - 1) > 2.5e-2:
                 print()
                 return 10 * rlist[ri] + l_list[li], (numeric[ri, li], analytic[ri, li])
-    print('-'*36)
+    print()
+    print('-'*9)
     if do_plot is True:
         plot_w_vs_HS(rlist, llist, numeric, analytic)
 
+    return 0, 0
 def plot_w_vs_HS(rlist, llist, numeric, analytic):
 
     fig = plt.figure()
