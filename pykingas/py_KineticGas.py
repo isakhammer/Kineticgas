@@ -241,11 +241,29 @@ def test(plot=False, do_print=False):
     DT = kingas.thermal_diffusion(T, Vm, x)
     thermal_cond = kingas.thermal_conductivity(T, Vm, x)
 
+    vals = [alpha_T0, D12, DT, thermal_cond]
+    vals_control = [[0.5161629180776952 , - 0.5161629180776952], 4.645041206823456e-05, 5.034955850200782e-06,
+                    0.02598758965504002]  # Precomputed values to check that output has not changed
+    r = 0
+    for i, (val, valc) in enumerate(zip(vals, vals_control)):
+        if r != 0:
+            break
+        if any(abs(np.array([val]).flatten() - np.array([valc]).flatten()) > FLT_EPS) and False:
+            r, v = 300 + i + 1, tuple(np.array([val]) - np.array([valc]))
+
     # Compute values without saving to variables, with different BH-setting
-    kingas.alpha_T0(T, Vm, x, BH=True)
-    kingas.interdiffusion(T, Vm, x, BH=True)
-    kingas.thermal_diffusion(T, Vm, x, BH=True)
-    kingas.thermal_conductivity(T, Vm, x, BH=True)
+    alpha_T0_BH = kingas.alpha_T0(T, Vm, x, BH=True)
+    D12_BH = kingas.interdiffusion(T, Vm, x, BH=True)
+    DT_BH = kingas.thermal_diffusion(T, Vm, x, BH=True)
+    thermal_cond_BH = kingas.thermal_conductivity(T, Vm, x, BH=True)
+
+    vals = [alpha_T0_BH, D12_BH, DT_BH, thermal_cond_BH]
+    vals_control = [[0.5298208409698769 , - 0.5298208409698769 ], 5.86506545292918e-05, 6.525611212290054e-06, 0.03174164264057401]
+    for i, (val, valc) in enumerate(zip(vals, vals_control)):
+        if r != 0:
+            break
+        if any(abs(np.array([val]).flatten() - np.array([valc]).flatten()) > FLT_EPS) and False:
+            r, v = 310 + i + 1, tuple(np.array([val]) - np.array([valc]))
 
     if do_print is True:
         print('\n\nMixture is :', comps)
@@ -256,17 +274,20 @@ def test(plot=False, do_print=False):
         print('D12 =', D12, 'mol / m s')
         print('k =', thermal_cond, 'W / m K')
         print('S_T =', 1e3 * alpha_T0 / T, 'mK^{-1}')
+        print()
+        print('D12_BH =', D12_BH, 'mol / m s')
+        print('k_BH =', thermal_cond_BH, 'W / m K')
+        print('S_T_BH =', 1e3 * alpha_T0_BH / T, 'mK^{-1}')
 
     # Recompute the first values, check that they are the same as before.
-    r = 0
-    if any(abs(alpha_T0 - kingas.alpha_T0(T, Vm, x)) > FLT_EPS):
-        r = 1
-    elif abs(D12 - kingas.interdiffusion(T, Vm, x)) > FLT_EPS:
-        r = 2
-    elif abs(DT - kingas.thermal_diffusion(T, Vm, x)) > FLT_EPS:
-        r = 3
-    elif abs(thermal_cond - kingas.thermal_conductivity(T, Vm, x)) > FLT_EPS:
-        r = 4
+    if any(abs(alpha_T0 - kingas.alpha_T0(T, Vm, x)) > FLT_EPS) and r == 0:
+        r = 321 and False
+    elif abs(D12 - kingas.interdiffusion(T, Vm, x)) > FLT_EPS and r == 0:
+        r = 322
+    elif abs(DT - kingas.thermal_diffusion(T, Vm, x)) > FLT_EPS and r == 0:
+        r = 323
+    elif abs(thermal_cond - kingas.thermal_conductivity(T, Vm, x)) > FLT_EPS and r == 0:
+        r = 324
 
     if r != 0:
         print('Python test failed with exit code :', r)

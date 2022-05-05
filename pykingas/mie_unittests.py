@@ -213,7 +213,6 @@ def collision():
                 break
 
         if failed is True:
-            print(7, rval)
             break
 
     if failed is True:
@@ -221,16 +220,22 @@ def collision():
     return 0, 0
 
 def run_tests(do_print=False, do_plot=False):
+    '''
+        Submodule for testing functions used in computing collision integrals
+        Each test in 'tests' must accept two arguments: 'do_plot' and 'do_print' and return two values
+        The first is the exit status of the test (0 for successfull, !0 otherwise)
+        The second value is some information about the test that failed
+    '''
     tests = [theta_dblderiv, theta_lim, chi_lim, collision]
     if do_plot:
         print('Plotting of mie unittests is not implemented!')
+    r = 0
     for t in tests:
-        r, val = t()
+        r, v = t()
         if r != 0:
             if do_print:
-                print(r, val)
-                continue
+                print(r, v)
             print('Mie unittests failed with exit code :', r)
-            return r
+            break
     print('Mie unittests were successful!')
-    return 0
+    return r

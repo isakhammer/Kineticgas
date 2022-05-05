@@ -3,6 +3,12 @@ import sys, shutil, os
 args = sys.argv
 
 if '-test' in args:
+    '''
+        Test suite for pykingas package
+        Runs the tests placed in the list 'test_pkgs'
+        Each element is a function that accepts the keyword arguments 'do_plot' and 'do_print'
+        The function should return a single value, 0 for successfull tests, not 0 for failed tests.
+    '''
     print('Testing from', __file__)
     try:
         import pyctp
@@ -13,6 +19,7 @@ if '-test' in args:
 
     test_pkgs = [mie_unittests.run_tests, collision_integral_unittests.run_tests, pykg.test]
 
+    r = 0
     for test in test_pkgs:
         if '-print' in args and '-plot' in args:
             r = test(do_print=True, do_plot=True)
@@ -24,4 +31,4 @@ if '-test' in args:
             r = test()
         if r != 0:
             exit(r)
-    exit(0)
+    exit(r)
