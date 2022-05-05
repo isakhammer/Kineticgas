@@ -20,7 +20,7 @@ class KineticGas{
     std::vector<double> mole_fracs;
     const int potential_mode;
     
-    double T, m0, M1, M2, x1, x2, m1, m2, 
+    double  m0, M1, M2, x1, x2, m1, m2,
             sigma1, sigma2, sigma12, 
             eps1, eps2, eps12,
             la1, la2, la12,
@@ -41,7 +41,7 @@ class KineticGas{
         int potential_mode);
 
     // Collision integrals
-    double omega(int ij, int l, int r); // Calls the dimentionless collision integral function pointed to by "w_p", selected at initialisation with the "potential_mode" parameter.
+    double omega(int ij, int l, int r, double& T); // Calls the dimentionless collision integral function pointed to by "w_p", selected at initialisation with the "potential_mode" parameter.
 
     using CollisionIntegralPointer = double(KineticGas::*)(int, double, int, int);
     double w_HS(int ij, double T, int l, int r); // Dimentionless hard-sphere collision integral
@@ -87,7 +87,7 @@ class KineticGas{
     double chi_HS(int ij, double T, double g, double b);
 
     std::vector<std::vector<double>> get_A_matrix(
-        double in_T,
+        double T,
         std::vector<double> in_mole_fracs,
         int N);
 
@@ -97,7 +97,7 @@ class KineticGas{
         int N);
     
     std::vector<std::vector<double>> get_reduced_A_matrix(
-        double in_T,
+        double T,
         std::vector<double> in_mole_fracs,
         int N);
     
@@ -112,11 +112,11 @@ class KineticGas{
     double A_prime(int p, int q, int r, int l);
     double A_trippleprime(int p, int q, int r, int l);
 
-    double H_ij(int p, int q, int ij);
-    double H_i(int p, int q, int ij);
-    double H_simple(int p, int q, int i);
+    double H_ij(int p, int q, int ij, double& T);
+    double H_i(int p, int q, int ij, double& T);
+    double H_simple(int p, int q, int i, double& T);
 
-    double a(int p, int q);
+    double a(int p, int q, double& T);
 };
 
 int delta(int i, int j);
