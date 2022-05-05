@@ -37,15 +37,16 @@ double KineticGas::w_HS(int ij, double T, int l, int r){
 
 // Dimentionless collision integral for a spherical-potential
 double KineticGas::w_spherical(int ij, double T, int l, int r){
-    Point origin{1e-5, 1e-5};
+    Point origin{1e-7, 1e-7};
     Point end{7.5, 5};
-    double dx{0.1}, dy{0.1};
-    int refinement_levels{4};
-    double subdomain_dblder_limit{0.05};
+    double dg{0.5}, db{0.05};
+    int refinement_levels_g{4};
+    int refinement_levels_b{16};
+    double subdomain_dblder_limit{1e-5};
 
     return integrate2d(origin, end,
-                        dx, dy,
-                        refinement_levels,
+                        dg, db,
+                        refinement_levels_g, refinement_levels_b,
                         subdomain_dblder_limit,
                         ij, T, l, r,
                         w_spherical_integrand_export);
