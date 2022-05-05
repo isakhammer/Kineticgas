@@ -45,7 +45,7 @@ def plot_triangluation(r=1, l=1):
     N_EVAL = 0
     T_EVAL = 0
     t0 = time.process_time()
-    numeric = I.integrate2d(origin, end, dx, dy, refinement_levels_x, refinement_levels_y, subdomain_dblder_limit, 1, 300, l, r, w_integrand)
+    numeric = I.integrate2d(origin, end, dx, dy, refinement_levels_x, refinement_levels_y, subdomain_dblder_limit, 1, 300, l, r, w_integrand) # kin.cpp_kingas.w_spherical(1, T, l, r) #
     t1 = time.process_time()
     t_tot = t1 - t0
     n_evauated = N_EVAL
