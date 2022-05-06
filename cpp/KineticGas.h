@@ -11,6 +11,29 @@ enum potential_modes{
     mie_potential_idx // Use Mie-potential for omega-integrals
 };
 
+// Omega is a function of T, r and l
+// Because T is a double, use this struct
+struct OmegaPoint{
+    int ij, l, r, T_cK;
+    OmegaPoint(int ij, int l, int r, double T) : ij{ij}, l{l}, r{r} {
+        T_cK = (int) T * 100 + 0.5; // Temperature in cK (10^-2 K)
+    };
+    bool operator<(const OmegaPoint& other) const {
+        if (ij < other.ij) return true;
+        else if (ij == other.ij){
+            if (l < other.l) return true;
+            else if (l == other.l){
+                if (r < other.r) return true;
+                else if (r == other.r){
+                    if (T_cK < other.T_cK) return true;
+                }
+            }
+        }
+        return false;
+    }
+
+};
+
 //typedef  double (KineticGas::*collision_integral)(int ij, int l, int r);  // Pointer to collision integral
 class KineticGas{
     public:
@@ -32,6 +55,7 @@ class KineticGas{
     std::map<int, double> la_map;
     std::map<int, double> lr_map;
     std::map<int, double> C_map;
+    std::map<OmegaPoint, double> omega_map;
 
     KineticGas(std::vector<double> init_mole_weights,
         std::vector<std::vector<double>> init_sigmaij,

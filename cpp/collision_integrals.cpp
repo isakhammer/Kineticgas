@@ -19,11 +19,18 @@ Common variables are:
 #pragma region // Collision integrals for various potentials
 
 double KineticGas::omega(int ij, int l, int r, double& T){
-    double w = std::invoke(w_p, this, ij, T, l, r); // w_p is a pointer to the dimentionless collision integral corresponding to this.potential_mode
-    if (ij == 1 || ij == 2){
-        return pow(sigma[ij - 1], 2) * sqrt((PI * BOLTZMANN * T) / mole_weights[ij - 1]) * w;
+    OmegaPoint point{ij, l, r, T};
+    const std::map<OmegaPoint, double>::iterator pos = omega_map.find(point);
+    if (pos == omega_map.end()){
+        double w = std::invoke(w_p, this, ij, T, l, r); // w_p is a pointer to the dimentionless collision integral corresponding to this.potential_mode
+        if (ij == 1 || ij == 2){
+            return pow(sigma[ij - 1], 2) * sqrt((PI * BOLTZMANN * T) / mole_weights[ij - 1]) * w;
+        }
+        double val = 0.5 * pow(sigma12, 2) * sqrt(2 * PI * BOLTZMANN * T / (m0 * M1 * M2)) * w;
+        omega_map[point] = val;
+        return val;
     }
-    return 0.5 * pow(sigma12, 2) * sqrt(2 * PI * BOLTZMANN * T / (m0 * M1 * M2)) * w;
+    return pos->second;
 }
 
 // Dimentionless collision integral for a Hard-sphere potential (analytic)
