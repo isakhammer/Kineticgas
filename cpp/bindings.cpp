@@ -12,7 +12,6 @@ PYBIND11_MODULE(KineticGas_r, handle){
 PYBIND11_MODULE(KineticGas_d, handle){
 #endif
     handle.doc() = "Is this documentation? This is documentation.";
-    handle.def("cpp_tests", &cpp_tests);
     handle.def("ipow", &ipow);
     handle.def("logspace", &logspace);
     handle.def("erfspace", &erfspace);

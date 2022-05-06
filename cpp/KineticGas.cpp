@@ -98,50 +98,6 @@ std::vector<double> erfspace(const double& lmin, const double& lmax, const int& 
 
 #pragma endregion
 
-#pragma region // Tests
-int cpp_tests(){
-    std::printf("We runnin tests!");
-    int r{0};
-    r = factorial_tests();
-    if (!r) r = kingas_tests();
-    return r;
-}
-
-int kingas_tests(){
-    int d1 = delta(1, 1);
-    int d2 = delta(2, 1);
-    if (fabs(d1 - 1.0) > FLTEPS || fabs(d2) > FLTEPS){
-        return 26;
-    }
-    
-    std::vector<double> Mm{5.5, 10.1};
-    std::vector<std::vector<double>> sigmaij {{1.5, 2.0}, {2.0, 2.5}};
-    std::vector<std::vector<double>> epsij {{1.5, 2.0}, {2.0, 2.5}};
-    std::vector<std::vector<double>> la {{6.0, 6.0}, {6.0, 6.0}};
-    std::vector<std::vector<double>> lr {{12.0, 12.0}, {12.0, 12.0}};
-    std::vector<double> x {0.3, 0.7};
-    KineticGas k{Mm, sigmaij, epsij, la, lr, 0};
-    std::vector<double> tsts {k.m0 - 15.6, k.sigma1 - 1.5, k.sigma2 - 2.5, k.sigma12 - 2.0};
-    for (double t : tsts){
-        if (fabs(t) > FLTEPS){
-            return 27;
-        }
-    }
-
-    double A = k.A(1, 1, 1, 1);
-    if (fabs(A) < FLTEPS || fabs(A) > 1e12){
-        return 28;
-    }
-    double A_prime = k.A_prime(1, 1, 1, 1);
-    if (fabs(A_prime) < FLTEPS || fabs(A_prime) > 1e12){
-        return 29;
-    }
-    double A_tprime = k.A_trippleprime(2, 3, 2, 2);
-    if (fabs(A_tprime) < FLTEPS || fabs(A_tprime) > 1e12){
-        return 30;
-    }
-    return 0;
-}
 #pragma endregion
 
 #pragma region // Constructor
@@ -242,18 +198,15 @@ KineticGas::KineticGas(std::vector<double> init_mole_weights,
 #pragma region // Helper functions
 
 std::vector<std::vector<double>> KineticGas::get_A_matrix(
-        double T,
-        std::vector<double> in_mole_fracs,
-        int N)
+        const double& T,
+        const std::vector<double>& mole_fracs,
+        const int& N)
 {
-    mole_fracs = in_mole_fracs;
-    x1 = mole_fracs[0];
-    x2 = mole_fracs[1];
     std::vector<std::vector<double>> A_matrix(2*N + 1, std::vector<double>(2 * N + 1));
 
     for (int p = - N; p <= N; p++){
         for (int q = - N; q <= p; q++){
-            A_matrix[p + N][q + N] = a(p, q, T);
+            A_matrix[p + N][q + N] = a(p, q, T, mole_fracs);
             A_matrix[q + N][p + N] = A_matrix[p + N][q + N]; // Matrix is symmetric
         }
     }
@@ -262,9 +215,9 @@ std::vector<std::vector<double>> KineticGas::get_A_matrix(
 }
 
 std::vector<double> KineticGas::get_delta_vector(
-        double T,
-        double particle_density,
-        int N)
+        const double& T,
+        const double& particle_density,
+        const int& N)
 {
     std::vector<double> delta_vector(2 * N + 1);
     delta_vector[N] = (3.0 / (particle_density * 2.0)) * sqrt(2 * BOLTZMANN * T / m0);
@@ -272,33 +225,30 @@ std::vector<double> KineticGas::get_delta_vector(
 }
 
 std::vector<std::vector<double>> KineticGas::get_reduced_A_matrix(
-        double T,
-        std::vector<double> in_mole_fracs,
-        int N)
+        const double& T,
+        const std::vector<double>& mole_fracs,
+        const int& N)
 {   
     // Get A-matrix, exluding central row and column, where (p == 0 or q == 0)
-    mole_fracs = in_mole_fracs;
-    x1 = mole_fracs[0];
-    x2 = mole_fracs[1];
     std::vector<std::vector<double>> reduced_A(2*N, std::vector<double>(2 * N));
     // Upper left block
     for (int p = - N; p < 0; p++){
         for (int q = - N; q <= p; q++){
-            reduced_A[p + N][q + N] = a(p, q, T);
+            reduced_A[p + N][q + N] = a(p, q, T, mole_fracs);
             reduced_A[q + N][p + N] = reduced_A[p + N][q + N]; // Matrix is symmetric
         }
     }
     //Lower left block (and upper right by symmetry)
     for (int p = 1; p <= N; p++){
         for (int q = - N; q < 0; q++){
-            reduced_A[p + N - 1][q + N] = a(p, q, T);
+            reduced_A[p + N - 1][q + N] = a(p, q, T, mole_fracs);
             reduced_A[q + N][p + N - 1] = reduced_A[p + N - 1][q + N]; // Matrix is symmetric
         }
     }
     //Lower right block
     for (int p = 1; p <= N; p++){
         for (int q = 1; q <= p; q++){
-            reduced_A[p + N - 1][q + N - 1] = a(p, q, T);
+            reduced_A[p + N - 1][q + N - 1] = a(p, q, T, mole_fracs);
             reduced_A[q + N - 1][p + N - 1] = reduced_A[p + N - 1][q + N - 1]; // Matrix is symmetric
         }
     }
@@ -307,14 +257,14 @@ std::vector<std::vector<double>> KineticGas::get_reduced_A_matrix(
 }
 
 std::vector<double> KineticGas::get_alpha_vector(
-    double in_T,
-    double particle_density,
-    std::vector<double> in_mole_fracs,
-    int N)
+    const double& T,
+    const double& particle_density,
+    const std::vector<double>& in_mole_fracs,
+    const int& N)
 {
     std::vector<double> alpha_vector(2 * N);
-    alpha_vector[N - 1] = - (15.0 / 4.0) * (in_mole_fracs[1] / particle_density) * sqrt(2 * BOLTZMANN * in_T / m2);
-    alpha_vector[N] = - (15.0 / 4.0) * (in_mole_fracs[0] / particle_density) * sqrt(2 * BOLTZMANN * in_T / m1);
+    alpha_vector[N - 1] = - (15.0 / 4.0) * (in_mole_fracs[1] / particle_density) * sqrt(2 * BOLTZMANN * T / m2);
+    alpha_vector[N] = - (15.0 / 4.0) * (in_mole_fracs[0] / particle_density) * sqrt(2 * BOLTZMANN * T / m1);
     return alpha_vector;
 }
 
@@ -322,7 +272,7 @@ std::vector<double> KineticGas::get_alpha_vector(
 
 #pragma region // A-functions
 
-double KineticGas::A(int p, int q, int r, int l){
+double KineticGas::A(const int& p, const int& q, const int& r, const int& l){
     double value{0.0};
     int max_i = min(min(p, q), min(r, p + q + 1 - r));
     for (int i = l - 1; i <= max_i; i++){
@@ -333,9 +283,10 @@ double KineticGas::A(int p, int q, int r, int l){
     return value;
 }
 
-double KineticGas::A_prime(int p, int q, int r, int l){
-    double F = (pow(M1, 2) + pow(M2, 2)) / (2 * M1 * M2);
-    double G = (M1 - M2) / M2;
+double KineticGas::A_prime(const int& p, const int& q, const int& r, const int& l,
+                            const double& tmp_M1, const double& tmp_M2){
+    double F = (pow(tmp_M1, 2) + pow(tmp_M2, 2)) / (2 * tmp_M1 * tmp_M2);
+    double G = (tmp_M1 - tmp_M2) / tmp_M2;
 
     int max_i = min(p, min(q, min(r, p + q + 1 - r)));
     int max_k;
@@ -359,7 +310,7 @@ double KineticGas::A_prime(int p, int q, int r, int l){
     return value;
 }
 
-double KineticGas::A_trippleprime(int p, int q, int r, int l){
+double KineticGas::A_trippleprime(const int& p, const int& q, const int& r, const int& l){
     if (p * q == 0 || l % 2 ){
         return 0.0;
     }
@@ -375,11 +326,12 @@ double KineticGas::A_trippleprime(int p, int q, int r, int l){
 #pragma endregion
 
 #pragma region // H-integrals and a(p, q)
-double KineticGas::H_ij(int p, int q, int ij, double& T){
+double KineticGas::H_ij(const int& p, const int& q, const int& ij, const double& T){
+
+    double tmp_M1{M1}, tmp_M2{M2};
     if (ij == 21){  // swap indices
-        double tmp{M1};
-        M1 = M2;
-        M2 = tmp;
+        tmp_M1 = M2;
+        tmp_M2 = M1;
     }
 
     double value{0.0};
@@ -392,25 +344,19 @@ double KineticGas::H_ij(int p, int q, int ij, double& T){
             value += A(p, q, r, l) * omega(12, l, r, T);
         }
     }
-    value *= 8 * pow(M2, p + 0.5) * pow(M1, q + 0.5);
-
-    
-    if (ij == 21){  // swap back
-        double tmp{M1};
-        M1 = M2;
-        M2 = tmp;
-    }
-    
+    value *= 8 * pow(tmp_M2, p + 0.5) * pow(tmp_M1, q + 0.5);
 
     return value;
 }
 
-double KineticGas::H_i(int p, int q, int ij, double& T){
+double KineticGas::H_i(const int& p, const int& q, const int& ij, const double& T){
+
+    double tmp_M1{M1}, tmp_M2{M2};
     if (ij == 21){  // swap indices
-        double tmp{M1};
-        M1 = M2;
-        M2 = tmp;
+        tmp_M1 = M2;
+        tmp_M2 = M1;
     }
+
     double value{0.0};
 
     int max_l = min(p, q) + 1;
@@ -418,21 +364,15 @@ double KineticGas::H_i(int p, int q, int ij, double& T){
     for (int l = 1; l <= max_l; l++){
         max_r = p + q + 2 - l;
         for (int r = l; r <= max_r; r++){
-            value += A_prime(p, q, r, l) * omega(12, l, r, T);
+            value += A_prime(p, q, r, l, tmp_M1, tmp_M2) * omega(12, l, r, T);
         }
     }
     value *= 8;
     
-    if (ij == 21){  // swap back
-        double tmp{M1};
-        M1 = M2;
-        M2 = tmp;
-    }
-    
     return value;
 }
 
-double KineticGas::H_simple(int p, int q, int i, double& T){
+double KineticGas::H_simple(const int& p, const int& q, const int& i, const double& T){
     double value{0.0};
     int max_l = min(p,q) + 1;
     int max_r;
@@ -446,7 +386,8 @@ double KineticGas::H_simple(int p, int q, int i, double& T){
     return value;
 }
 
-double KineticGas::a(int p, int q, double& T){
+double KineticGas::a(const int& p, const int& q, const double& T, const std::vector<double>& mole_fracs){
+    double x1{mole_fracs[0]}, x2{mole_fracs[1]};
     if (p == 0 || q == 0){
         if (p > 0) return pow(M1, 0.5) * x1 * x2 * H_i(p, q, 12, T);
         else if (p < 0) return - pow(M2, 0.5) * x1 * x2 * H_i(-p, q, 21, T);

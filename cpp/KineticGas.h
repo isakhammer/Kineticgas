@@ -40,10 +40,9 @@ class KineticGas{
     std::vector<double> mole_weights;
     std::vector<std::vector<double>> sigmaij, epsij, la_ij, lr_ij;
     std::vector<double> sigma;
-    std::vector<double> mole_fracs;
     const int potential_mode;
     
-    double  m0, M1, M2, x1, x2, m1, m2,
+    double  m0, M1, M2, m1, m2,
             sigma1, sigma2, sigma12, 
             eps1, eps2, eps12,
             la1, la2, la12,
@@ -65,11 +64,11 @@ class KineticGas{
         int potential_mode);
 
     // Collision integrals
-    double omega(int ij, int l, int r, double& T); // Calls the dimentionless collision integral function pointed to by "w_p", selected at initialisation with the "potential_mode" parameter.
+    double omega(const int& ij, const int& l, const int& r, const double& T); // Calls the dimentionless collision integral function pointed to by "w_p", selected at initialisation with the "potential_mode" parameter.
 
-    using CollisionIntegralPointer = double(KineticGas::*)(int, double, int, int);
-    double w_HS(int ij, double T, int l, int r); // Dimentionless hard-sphere collision integral
-    double w_spherical(int ij, double T, int l, int r); // Dimentionless collision integral for spherical potentials
+    using CollisionIntegralPointer = double(KineticGas::*)(const int&, const double&, const int&, const int&);
+    double w_HS(const int& ij, const double& T, const int& l, const int& r); // Dimentionless hard-sphere collision integral
+    double w_spherical(const int& ij, const double& T, const int& l, const int& r); // Dimentionless collision integral for spherical potentials
     CollisionIntegralPointer w_p; // Will point to one of the above dimentionless collision integrals
     double w_spherical_integrand(const int& ij, const double& T, 
                             const double& g, const double& b, 
@@ -111,36 +110,36 @@ class KineticGas{
     double chi_HS(int ij, double T, double g, double b);
 
     std::vector<std::vector<double>> get_A_matrix(
-        double T,
-        std::vector<double> in_mole_fracs,
-        int N);
+        const double& T,
+        const std::vector<double>& in_mole_fracs,
+        const int& N);
 
     std::vector<double> get_delta_vector(
-        double T,
-        double particle_density,
-        int N);
+        const double& T,
+        const double& particle_density,
+        const int& N);
     
     std::vector<std::vector<double>> get_reduced_A_matrix(
-        double T,
-        std::vector<double> in_mole_fracs,
-        int N);
+        const double& T,
+        const std::vector<double>& in_mole_fracs,
+        const int& N);
     
     std::vector<double> get_alpha_vector(
-        double T,
-        double particle_density,
-        std::vector<double> mole_fracs,
-        int N
+        const double& T,
+        const double& particle_density,
+        const std::vector<double>& mole_fracs,
+        const int& N
     );
 
-    double A(int p, int q, int r, int l);
-    double A_prime(int p, int q, int r, int l);
-    double A_trippleprime(int p, int q, int r, int l);
+    double A(const int& p, const int& q, const int& r, const int& l);
+    double A_prime(const int& p, const int& q, const int& r, const int& l, const double& tmp_M1, const double& tmp_M2);
+    double A_trippleprime(const int& p, const int& q, const int& r, const int& l);
 
-    double H_ij(int p, int q, int ij, double& T);
-    double H_i(int p, int q, int ij, double& T);
-    double H_simple(int p, int q, int i, double& T);
+    double H_ij(const int& p, const int& q, const int& ij, const double& T);
+    double H_i(const int& p, const int& q, const int& ij, const double& T);
+    double H_simple(const int& p, const int& q, const int& i, const double& T);
 
-    double a(int p, int q, double& T);
+    double a(const int& p, const int& q, const double& T, const std::vector<double>& mole_fracs);
 };
 
 int delta(int i, int j);
