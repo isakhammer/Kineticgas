@@ -14,11 +14,11 @@
 #include <thread>
 #include <functional>
 #include <math.h>
+#include "pybind11/pybind11.h"
 
 #ifdef DEBUG
 #define _LIBCPP_DEBUG 1
 #endif
-
 
 #define pprintf(flt) std::printf("%f", flt); std::printf("\n")
 #define pprinti(i) std::printf("%i", i); std::printf("\n")
@@ -202,31 +202,65 @@ std::vector<std::vector<double>> KineticGas::get_A_matrix(
         const std::vector<double>& mole_fracs,
         const int& N)
 {
-    std::vector<std::vector<double>> A_matrix(2*N + 1, std::vector<double>(2 * N + 1));
+    std::vector<std::vector<double>> A_matrix(2 * N + 1, std::vector<double>(2 * N + 1));
+
+    pybind11::gil_scoped_release release;
 
     std::thread t1(&KineticGas::fill_A_matrix_1, this, std::ref(T), std::ref(mole_fracs), std::ref(N), std::ref(A_matrix));
+    std::thread t2(&KineticGas::fill_A_matrix_2, this, std::ref(T), std::ref(mole_fracs), std::ref(N), std::ref(A_matrix));
+    std::thread t3(&KineticGas::fill_A_matrix_3, this, std::ref(T), std::ref(mole_fracs), std::ref(N), std::ref(A_matrix));
 
-    for (int p = 1; p <= N; p++){
-        for (int q = - p + 1; q <= p; q++){
-            A_matrix[p + N][q + N] = a(p, q, T, mole_fracs);
-            A_matrix[q + N][p + N] = A_matrix[p + N][q + N]; // Matrix is symmetric
-        }
+    for (int p = 1; p <= N; p++){                            // -  -  -  -  -
+        for (int q = 0; q <= p; q++){                        // -  -  -  -  -
+            A_matrix[p + N][q + N] = a(p, q, T, mole_fracs); // -  -  -  -  -
+            A_matrix[q + N][p + N] = A_matrix[p + N][q + N]; // -  -  -  x  -
+        }                                                    // -  -  -  x  x
     }
 
-    t1.join();
+    t1.join(); t2.join(); t3.join();
+
+    pybind11::gil_scoped_acquire acquire;
 
     return A_matrix;
 }
 
-void KineticGas::fill_A_matrix_1( // Fill part of the A-matrix
-        const double& T,
-        const std::vector<double>& mole_fracs,
-        const int& N,
-        std::vector<std::vector<double>>& A_matrix){
-
-    for (int p = - N; p <= N; p++){
+void KineticGas::fill_A_matrix_1( // Fill part of the A-matrix (as indicated by crosses)
+        const double& T,                                 // x  -  -  -  -
+        const std::vector<double>& mole_fracs,           // x  x  -  -  -
+        const int& N,                                    // -  -  -  -  -
+        std::vector<std::vector<double>>& A_matrix){     // -  -  -  -  -
+                                                         // -  -  -  -  -
+    for (int p = - N; p < 0; p++){
         for (int q = - N; q <= - abs(p); q++){
-            std::printf("Left : %i, %i\n", p, q);
+            A_matrix[p + N][q + N] = a(p, q, T, mole_fracs);
+            A_matrix[q + N][p + N] = A_matrix[p + N][q + N]; // Matrix is symmetric
+        }
+    }
+}
+
+void KineticGas::fill_A_matrix_2( // Fill part of the A-matrix
+        const double& T,                                // -  -  -  -  -
+        const std::vector<double>& mole_fracs,          // -  -  -  -  -
+        const int& N,                                   // x  x  x  -  -
+        std::vector<std::vector<double>>& A_matrix){    // x  x  -  -  -
+                                                        // x  -  -  -  -
+    for (int p = 0; p <= N; p++){
+        for (int q = - N; q <= - abs(p); q++){
+            double val = a(p, q, T, mole_fracs);
+            A_matrix[p + N][q + N] = val;
+            A_matrix[q + N][p + N] = A_matrix[p + N][q + N]; // Matrix is symmetric
+        }
+    }
+}
+
+void KineticGas::fill_A_matrix_3( // Fill part of the A-matrix
+        const double& T,                                // -  -  -  -  -
+        const std::vector<double>& mole_fracs,          // -  -  -  -  -
+        const int& N,                                   // -  -  -  -  -
+        std::vector<std::vector<double>>& A_matrix){    // -  -  x  -  -
+                                                        // -  x  x  -  -
+    for (int p = 1; p <= N; p++){
+        for (int q = - p + 1; q < 0; q++){
             A_matrix[p + N][q + N] = a(p, q, T, mole_fracs);
             A_matrix[q + N][p + N] = A_matrix[p + N][q + N]; // Matrix is symmetric
         }
@@ -311,17 +345,20 @@ double KineticGas::A_prime(const int& p, const int& q, const int& r, const int& 
     int max_k;
     int max_w;
 
+    Product p1{1}, p2{1};
+
     double value{0.0};
     for (int i = l - 1; i <= max_i; i++ ){
         max_w = min(p, min(q, p + q + 1 - r)) - i;
         max_k = min(l, i);
         for (int k = l - 1; k <= max_k; k++){
             for (int w = 0; w <= max_w; w++){
-                value += ((ipow(8, i) * Fac(p + q - 2 * i - w) * ipow(-1, r + i) * Fac(r + 1) * Fac(2 * (p + q + 2 - i - w)) * ipow(2, 2 * r) * pow(F, i - k) * pow(G, w) 
-                        * ((ipow(2, 2 * w - 1) * pow(M1, i) * pow(M2, p + q - i - w)) * 2)
-                        * (M1 * (p + q + 1 - i - r - w) * delta(k, l) - M2 * (r - i) * delta(k, l - 1))
-                        ) / (Fac(p - i - w) * Fac(q - i - w) * Fac(r - i) * Fac(p + q + 1 - i - r - w) * Fac(2 * r + 2) * Fac(p + q + 2 - i - w) * ipow(4, p + q + 1) * Fac(k) * Fac(i - k) * Fac(w))
-                        );
+                p1 = ((ipow(8, i) * Fac(p + q - 2 * i - w) * ipow(-1, r + i) * Fac(r + 1) * Fac(2 * (p + q + 2 - i - w)) * ipow(2, 2 * r) * pow(F, i - k) * pow(G, w)
+                        * ((ipow(2, 2 * w - 1) * pow(tmp_M1, i) * pow(tmp_M2, p + q - i - w)) * 2)
+                        * (tmp_M1 * (p + q + 1 - i - r - w) * delta(k, l) - tmp_M2 * (r - i) * delta(k, l - 1))
+                        ));
+                p2 = (Fac(p - i - w) * Fac(q - i - w) * Fac(r - i) * Fac(p + q + 1 - i - r - w) * Fac(2 * r + 2) * Fac(p + q + 2 - i - w) * ipow(4, p + q + 1) * Fac(k) * Fac(i - k) * Fac(w));
+                value += p1 / p2; // NB: Gives Bus error if unless v1 and v2 are initialized before adding to value... pls help
             }
         }
     }
@@ -346,7 +383,6 @@ double KineticGas::A_trippleprime(const int& p, const int& q, const int& r, cons
 
 #pragma region // H-integrals and a(p, q)
 double KineticGas::H_ij(const int& p, const int& q, const int& ij, const double& T){
-
     double tmp_M1{M1}, tmp_M2{M2};
     if (ij == 21){  // swap indices
         tmp_M1 = M2;
@@ -369,13 +405,11 @@ double KineticGas::H_ij(const int& p, const int& q, const int& ij, const double&
 }
 
 double KineticGas::H_i(const int& p, const int& q, const int& ij, const double& T){
-
     double tmp_M1{M1}, tmp_M2{M2};
     if (ij == 21){  // swap indices
         tmp_M1 = M2;
         tmp_M2 = M1;
     }
-
     double value{0.0};
 
     int max_l = min(p, q) + 1;

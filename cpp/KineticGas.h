@@ -133,6 +133,12 @@ class KineticGas{
         const int& N,
         std::vector<std::vector<double>>& A_matrix);
 
+    void fill_A_matrix_3( // Fill another part of the A-matrix
+        const double& T,
+        const std::vector<double>& mole_fracs,
+        const int& N,
+        std::vector<std::vector<double>>& A_matrix);
+
     std::vector<double> get_delta_vector(
         const double& T,
         const double& particle_density,
