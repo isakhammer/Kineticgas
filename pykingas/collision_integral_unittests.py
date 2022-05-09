@@ -1,4 +1,4 @@
-from pykingas import KineticGas
+from pykingas import KineticGas, bcolors
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
@@ -62,8 +62,8 @@ def run_tests(do_plot=False, do_print=False):
         if r != 0:
             if do_print:
                 print(r, v)
-            print('Collision integral tests failed with exit code', r)
+            print(f'{bcolors.FAIL}Collision integral tests failed with exit code', r, f'{bcolors.ENDC}')
             break
     if r == 0:
-        print('Collision integral unittests were successful!')
+        print(f'{bcolors.OKGREEN}Collision integral unittests were successful!{bcolors.ENDC}')
     return r

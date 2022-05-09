@@ -3,7 +3,7 @@ from pyctp import saftvrmie
 import scipy.linalg as lin
 from scipy.constants import Boltzmann, Avogadro
 from scipy.integrate import quad
-from pykingas import cpp_KineticGas
+from pykingas import cpp_KineticGas, bcolors
 import warnings
 
 FLT_EPS = 1e-12
@@ -290,8 +290,8 @@ def test(plot=False, do_print=False):
         r = 324
 
     if r != 0:
-        print('Python test failed with exit code :', r)
+        print(f'{bcolors.FAIL}Python test failed with exit code :', r, f'{bcolors.ENDC}')
     else:
-        print('Python test was successful!')
+        print(f'{bcolors.OKGREEN}Python test was successful!{bcolors.ENDC}')
 
     return r

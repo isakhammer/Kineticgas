@@ -1,4 +1,4 @@
-from pykingas import KineticGas, logspace, erfspace
+from pykingas import KineticGas, erfspace, bcolors
 from scipy.constants import Boltzmann
 import numpy as np
 
@@ -235,7 +235,7 @@ def run_tests(do_print=False, do_plot=False):
         if r != 0:
             if do_print:
                 print(r, v)
-            print('Mie unittests failed with exit code :', r)
+            print(f'{bcolors.FAIL}Mie unittests failed with exit code :', r, f'{bcolors.ENDC}')
             break
-    print('Mie unittests were successful!')
+    print(f'{bcolors.OKGREEN}Mie unittests were successful!{bcolors.ENDC}')
     return r
