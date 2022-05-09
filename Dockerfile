@@ -32,7 +32,13 @@ WORKDIR $CODE_DIR
 # Copy all files from host to container
 COPY . .
 
-RUN . cpp/build_mac.sh
+RUN set -e
+RUN cd cpp/release && cmake -DCMAKE_BUILD_TYPE=Release  ..
+RUN make
+RUN cd ../..
+RUN cp cpp/release/KineticGas*.so pykingas/KineticGas.so
+
+
 # RUN pip3 install -r requirements.txt
 # RUN pip3 install pykingas/
 # RUN . build_dist.sh
