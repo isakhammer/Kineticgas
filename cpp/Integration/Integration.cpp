@@ -296,8 +296,8 @@ double integrate2d(const Point& origin, const Point& end,
     std::map<std::pair<int, int>, const double> evaluated_points;
 
     #ifdef DEBUG
-        std::printf("Calling integrator with:\nOrigin : %E %E, End : %E, %E \ndx, dy : %E, %E\nRefinement : %i\nArgs : %i, %E, %i, %i\n\n",
-                    origin.x, origin.y, end.x, end.y, dx, dy, refinement_levels, arg_ij, arg_T, arg_l, arg_r);
+        std::printf("Calling integrator with:\nOrigin : %E %E, End : %E, %E \ndx, dy : %E, %E\nRefinement : %i, %i\nArgs : %i, %E, %i, %i\n\n",
+                    origin.x, origin.y, end.x, end.y, dx, dy, refinement_levels_x, refinement_levels_y, arg_ij, arg_T, arg_l, arg_r);
     #endif
 
     double val = integrate_adaptive(origin,
