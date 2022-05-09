@@ -14,7 +14,9 @@
 #include <thread>
 #include <functional>
 #include <math.h>
+#include <iostream>
 #include "pybind11/pybind11.h"
+#include <chrono>
 
 #ifdef DEBUG
 #define _LIBCPP_DEBUG 1
@@ -204,27 +206,69 @@ std::vector<std::vector<double>> KineticGas::get_A_matrix(
 {
     std::vector<std::vector<double>> A_matrix(2 * N + 1, std::vector<double>(2 * N + 1));
 
-    pybind11::gil_scoped_release release;
+    auto start = std::chrono::high_resolution_clock::now();
 
-    std::thread t1(&KineticGas::fill_A_matrix_1, this, std::ref(T), std::ref(mole_fracs), std::ref(N), std::ref(A_matrix));
-    std::thread t2(&KineticGas::fill_A_matrix_2, this, std::ref(T), std::ref(mole_fracs), std::ref(N), std::ref(A_matrix));
-    std::thread t3(&KineticGas::fill_A_matrix_3, this, std::ref(T), std::ref(mole_fracs), std::ref(N), std::ref(A_matrix));
+    // fill_A_matrix(T, mole_fracs, N, A_matrix);
 
-    for (int p = 1; p <= N; p++){                            // -  -  -  -  -
-        for (int q = 0; q <= p; q++){                        // -  -  -  -  -
-            A_matrix[p + N][q + N] = a(p, q, T, mole_fracs); // -  -  -  -  -
-            A_matrix[q + N][p + N] = A_matrix[p + N][q + N]; // -  -  -  x  -
-        }                                                    // -  -  -  x  x
-    }
+    // std::thread t1(&KineticGas::fill_A_matrix_14, this, std::ref(T), std::ref(mole_fracs), std::ref(N), std::ref(A_matrix));
+    // std::thread t2(&KineticGas::fill_A_matrix_24, this, std::ref(T), std::ref(mole_fracs), std::ref(N), std::ref(A_matrix));
+    // std::thread t3(&KineticGas::fill_A_matrix_34, this, std::ref(T), std::ref(mole_fracs), std::ref(N), std::ref(A_matrix));
+    // fill_A_matrix_44(T, mole_fracs, N, A_matrix);
+    // t1.join(); t2.join(); t3.join();
 
-    t1.join(); t2.join(); t3.join();
+    std::thread t1(&KineticGas::fill_A_matrix_12, this, std::ref(T), std::ref(mole_fracs), std::ref(N), std::ref(A_matrix));
+    fill_A_matrix_22(T, mole_fracs, N, A_matrix);
+    t1.join();
 
-    pybind11::gil_scoped_acquire acquire;
+    auto stop = std::chrono::high_resolution_clock::now();
+    std::cout << "A-call took " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << "\n";
 
     return A_matrix;
 }
 
-void KineticGas::fill_A_matrix_1( // Fill part of the A-matrix (as indicated by crosses)
+void KineticGas::fill_A_matrix( // Fill entire A_matrix
+        const double& T,
+        const std::vector<double>& mole_fracs,
+        const int& N,
+        std::vector<std::vector<double>>& A_matrix){
+
+    for (int p = - N; p <= N; p++){
+        for (int q = - N; q <= p; q++){
+            A_matrix[p + N][q + N] = a(p, q, T, mole_fracs);
+            A_matrix[q + N][p + N] = A_matrix[p + N][q + N];
+        }
+    }
+}
+
+void KineticGas::fill_A_matrix_12( // Fill part of the A-matrix (as indicated by crosses), used in combination with *_22
+        const double& T,                                 // x  -  -  -  -
+        const std::vector<double>& mole_fracs,           // x  x  -  -  -
+        const int& N,                                    // x  x  x  -  -
+        std::vector<std::vector<double>>& A_matrix){     // x  x  -  -  -
+                                                         // x  -  -  -  -
+    for (int p = - N; p <= N; p++){
+        for (int q = - N; q <= - abs(p); q++){
+            A_matrix[p + N][q + N] = a(p, q, T, mole_fracs);
+            A_matrix[q + N][p + N] = A_matrix[p + N][q + N]; // Matrix is symmetric
+        }
+    }
+}
+
+void KineticGas::fill_A_matrix_22( // Fill part of the A-matrix (as indicated by crosses), used in combination with *_12
+        const double& T,                                 // -  -  -  -  -
+        const std::vector<double>& mole_fracs,           // -  -  -  -  -
+        const int& N,                                    // -  -  -  -  -
+        std::vector<std::vector<double>>& A_matrix){     // -  -  x  x  -
+                                                         // -  x  x  x  x
+    for (int p = 1 ; p <= N; p++){
+        for (int q = - p + 1 ; q <= p; q++){
+            A_matrix[p + N][q + N] = a(p, q, T, mole_fracs);
+            A_matrix[q + N][p + N] = A_matrix[p + N][q + N]; // Matrix is symmetric
+        }
+    }
+}
+
+void KineticGas::fill_A_matrix_14( // Fill part of the A-matrix (as indicated by crosses), used in combination with *_24, *_34 and *_44
         const double& T,                                 // x  -  -  -  -
         const std::vector<double>& mole_fracs,           // x  x  -  -  -
         const int& N,                                    // -  -  -  -  -
@@ -238,7 +282,7 @@ void KineticGas::fill_A_matrix_1( // Fill part of the A-matrix (as indicated by 
     }
 }
 
-void KineticGas::fill_A_matrix_2( // Fill part of the A-matrix
+void KineticGas::fill_A_matrix_24( // Fill part of the A-matrix (as indicated by crosses), used in combination with *_14, *_34 and *_44
         const double& T,                                // -  -  -  -  -
         const std::vector<double>& mole_fracs,          // -  -  -  -  -
         const int& N,                                   // x  x  x  -  -
@@ -253,7 +297,7 @@ void KineticGas::fill_A_matrix_2( // Fill part of the A-matrix
     }
 }
 
-void KineticGas::fill_A_matrix_3( // Fill part of the A-matrix
+void KineticGas::fill_A_matrix_34( // Fill part of the A-matrix (as indicated by crosses), used in combination with *_14, *_24 and *_44
         const double& T,                                // -  -  -  -  -
         const std::vector<double>& mole_fracs,          // -  -  -  -  -
         const int& N,                                   // -  -  -  -  -
@@ -263,6 +307,20 @@ void KineticGas::fill_A_matrix_3( // Fill part of the A-matrix
         for (int q = - p + 1; q < 0; q++){
             A_matrix[p + N][q + N] = a(p, q, T, mole_fracs);
             A_matrix[q + N][p + N] = A_matrix[p + N][q + N]; // Matrix is symmetric
+        }
+    }
+}
+
+void KineticGas::fill_A_matrix_44( // Fill part of the A-matrix (as indicated by crosses), used in combination with *_14, *_24 and *_34
+        const double& T,                                // -  -  -  -  -
+        const std::vector<double>& mole_fracs,          // -  -  -  -  -
+        const int& N,                                   // -  -  -  -  -
+        std::vector<std::vector<double>>& A_matrix){    // -  -  -  x  -
+                                                        // -  -  -  x  x
+    for (int p = 1; p <= N; p++){
+        for (int q = 0; q <= p; q++){
+            A_matrix[p + N][q + N] = a(p, q, T, mole_fracs);
+            A_matrix[q + N][p + N] = A_matrix[p + N][q + N];
         }
     }
 }

@@ -121,19 +121,52 @@ class KineticGas{
         const std::vector<double>& in_mole_fracs,
         const int& N);
 
-    void fill_A_matrix_1( // Fill part of the A-matrix
+    /*
+    Filling the A-matrix is the most computationally intensive part of the module
+    The matrix elements may be computed independently. Therefore the functions fill_A_matrix_<ij>() have been
+    implemented to facilitate multithreading. j indicates the number of functions the matrix generation has been split
+    over, i differentiates between functions.
+    So fill_A_matrix_i4 is a set of four functions intended to be run on four separate threads, while
+    fill_A_matrix_i2 is a set of two functions intended to be run on two separate threads.
+    For a graphical representation of how the functions split the matrix, see the implementation file.
+    */
+    void fill_A_matrix( // Fill the entire A-matrix
         const double& T,
         const std::vector<double>& mole_fracs,
         const int& N,
         std::vector<std::vector<double>>& A_matrix);
 
-    void fill_A_matrix_2( // Fill another part of the A-matrix
+    void fill_A_matrix_12( // Fill part of the A-matrix, used in combination with *_22
         const double& T,
         const std::vector<double>& mole_fracs,
         const int& N,
         std::vector<std::vector<double>>& A_matrix);
 
-    void fill_A_matrix_3( // Fill another part of the A-matrix
+    void fill_A_matrix_22( // Fill part of the A-matrix, used in combination with *_12
+        const double& T,
+        const std::vector<double>& mole_fracs,
+        const int& N,
+        std::vector<std::vector<double>>& A_matrix);
+
+    void fill_A_matrix_14( // Fill part of the A-matrix, used in combination with *_24, *_34 and *_44
+        const double& T,
+        const std::vector<double>& mole_fracs,
+        const int& N,
+        std::vector<std::vector<double>>& A_matrix);
+
+    void fill_A_matrix_24( // Fill part of the A-matrix, used in combination with *_14, *_34 and *_44
+        const double& T,
+        const std::vector<double>& mole_fracs,
+        const int& N,
+        std::vector<std::vector<double>>& A_matrix);
+
+    void fill_A_matrix_34( // Fill part of the A-matrix, used in combination with *_14, *_24 and *_44
+        const double& T,
+        const std::vector<double>& mole_fracs,
+        const int& N,
+        std::vector<std::vector<double>>& A_matrix);
+
+    void fill_A_matrix_44( // Fill part of the A-matrix, used in combination with *_14, *_24 and *_34
         const double& T,
         const std::vector<double>& mole_fracs,
         const int& N,

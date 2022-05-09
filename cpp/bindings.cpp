@@ -36,7 +36,7 @@ PYBIND11_MODULE(KineticGas_d, handle){
                         int
                     >()
             )
-        .def("get_A_matrix", &KineticGas::get_A_matrix)
+        .def("get_A_matrix", &KineticGas::get_A_matrix, py::call_guard<py::gil_scoped_release>())
         .def("get_delta_vector", &KineticGas::get_delta_vector)
         .def("get_reduced_A_matrix", &KineticGas::get_reduced_A_matrix)
         .def("get_alpha_vector", &KineticGas::get_alpha_vector)
