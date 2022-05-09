@@ -25,23 +25,21 @@ RUN /usr/bin/python3.9 -m pip install --upgrade pip
 RUN pip3 install --upgrade pip
 
 
+
 ENV HOME_DIR /root
 RUN mkdir -p $HOME_DIR/code
 ENV CODE_DIR $HOME_DIR/code
 WORKDIR $CODE_DIR
 # Copy all files from host to container
 COPY . .
+RUN pip3 install -r requirements.txt
 
 RUN set -e
 RUN cd cpp/release && cmake -DCMAKE_BUILD_TYPE=Release  ..
-RUN make
-RUN cd ../..
+RUN cd cpp/release && make
 RUN cp cpp/release/KineticGas*.so pykingas/KineticGas.so
-
-
-# RUN pip3 install -r requirements.txt
-# RUN pip3 install pykingas/
-# RUN . build_dist.sh
+# RUN python3.9 -m pykingas -test
+RUN echo "source /root/code/common_scripts.sh" >> ~/.bashrc
 
 
 
