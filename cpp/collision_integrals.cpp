@@ -23,10 +23,9 @@ double KineticGas::omega(const int& ij, const int& l, const int& r, const double
     const std::map<OmegaPoint, double>::iterator pos = omega_map.find(point);
     if (pos == omega_map.end()){
         double w = std::invoke(w_p, this, ij, T, l, r); // w_p is a pointer to the dimentionless collision integral corresponding to this.potential_mode
-        if (ij == 1 || ij == 2){
-            return pow(sigma[ij - 1], 2) * sqrt((PI * BOLTZMANN * T) / mole_weights[ij - 1]) * w;
-        }
-        double val = 0.5 * pow(sigma12, 2) * sqrt(2 * PI * BOLTZMANN * T / (m0 * M1 * M2)) * w;
+        double val;
+        if (ij == 1 || ij == 2) val = pow(sigma[ij - 1], 2) * sqrt((PI * BOLTZMANN * T) / mole_weights[ij - 1]) * w;
+        else val = 0.5 * pow(sigma12, 2) * sqrt(2 * PI * BOLTZMANN * T / (m0 * M1 * M2)) * w;
         omega_map[point] = val;
         return val;
     }

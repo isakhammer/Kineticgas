@@ -206,8 +206,6 @@ std::vector<std::vector<double>> KineticGas::get_A_matrix(
 {
     std::vector<std::vector<double>> A_matrix(2 * N + 1, std::vector<double>(2 * N + 1));
 
-    auto start = std::chrono::high_resolution_clock::now();
-
     // fill_A_matrix(T, mole_fracs, N, A_matrix);
 
     // std::thread t1(&KineticGas::fill_A_matrix_14, this, std::ref(T), std::ref(mole_fracs), std::ref(N), std::ref(A_matrix));
@@ -219,9 +217,6 @@ std::vector<std::vector<double>> KineticGas::get_A_matrix(
     std::thread t1(&KineticGas::fill_A_matrix_12, this, std::ref(T), std::ref(mole_fracs), std::ref(N), std::ref(A_matrix));
     fill_A_matrix_22(T, mole_fracs, N, A_matrix);
     t1.join();
-
-    auto stop = std::chrono::high_resolution_clock::now();
-    std::cout << "A-call took " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << "\n";
 
     return A_matrix;
 }

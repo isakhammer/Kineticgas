@@ -3,6 +3,7 @@
 #include "pybind11/pybind11.h"
 #include "pybind11/stl.h"
 #include "pybind11/operators.h"
+#include <sstream>
 
 namespace py = pybind11;
 
@@ -25,6 +26,14 @@ PYBIND11_MODULE(KineticGas_d, handle){
     py::class_<Fac>(handle, "Fac")
         .def(py::init<int>())
         .def("eval", &Fac::eval);
+
+    py::class_<OmegaPoint>(handle, "OmegaPoint")
+        .def("__repr__",
+        [](const OmegaPoint &p) {
+            std::stringstream strm;
+            strm << "ij = " << p.ij << ", l = " << p.l << ", r = " << p.r << " T = " << p.T_cK << " cK";
+            return strm.str();
+        });
 
     py::class_<KineticGas>(handle, "cpp_KineticGas")
         .def(py::init<
@@ -64,5 +73,7 @@ PYBIND11_MODULE(KineticGas_d, handle){
         
         .def("w_spherical_integrand", &KineticGas::w_spherical_integrand)
         .def("w_spherical", &KineticGas::w_spherical)
-        .def("w_HS", &KineticGas::w_HS);
+        .def("w_HS", &KineticGas::w_HS)
+
+        .def_readwrite("omega_map", &KineticGas::omega_map);
 }
