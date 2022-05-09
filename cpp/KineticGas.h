@@ -4,6 +4,7 @@
 #include <vector>
 #include <map>
 #include <functional>
+#include <thread>
 
 
 enum potential_modes{
@@ -109,10 +110,28 @@ class KineticGas{
     double chi(int ij, double T, double g, double b);
     double chi_HS(int ij, double T, double g, double b);
 
+    std::thread t1;
+
+    void test_th(int& val){
+        val += 10;
+    }
+
     std::vector<std::vector<double>> get_A_matrix(
         const double& T,
         const std::vector<double>& in_mole_fracs,
         const int& N);
+
+    void fill_A_matrix_1( // Fill part of the A-matrix
+        const double& T,
+        const std::vector<double>& mole_fracs,
+        const int& N,
+        std::vector<std::vector<double>>& A_matrix);
+
+    void fill_A_matrix_2( // Fill another part of the A-matrix
+        const double& T,
+        const std::vector<double>& mole_fracs,
+        const int& N,
+        std::vector<std::vector<double>>& A_matrix);
 
     std::vector<double> get_delta_vector(
         const double& T,

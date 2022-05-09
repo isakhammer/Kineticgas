@@ -204,14 +204,33 @@ std::vector<std::vector<double>> KineticGas::get_A_matrix(
 {
     std::vector<std::vector<double>> A_matrix(2*N + 1, std::vector<double>(2 * N + 1));
 
-    for (int p = - N; p <= N; p++){
-        for (int q = - N; q <= p; q++){
+    std::thread t1(&KineticGas::fill_A_matrix_1, this, std::ref(T), std::ref(mole_fracs), std::ref(N), std::ref(A_matrix));
+
+    for (int p = 1; p <= N; p++){
+        for (int q = - p + 1; q <= p; q++){
             A_matrix[p + N][q + N] = a(p, q, T, mole_fracs);
             A_matrix[q + N][p + N] = A_matrix[p + N][q + N]; // Matrix is symmetric
         }
     }
 
+    t1.join();
+
     return A_matrix;
+}
+
+void KineticGas::fill_A_matrix_1( // Fill part of the A-matrix
+        const double& T,
+        const std::vector<double>& mole_fracs,
+        const int& N,
+        std::vector<std::vector<double>>& A_matrix){
+
+    for (int p = - N; p <= N; p++){
+        for (int q = - N; q <= - abs(p); q++){
+            std::printf("Left : %i, %i\n", p, q);
+            A_matrix[p + N][q + N] = a(p, q, T, mole_fracs);
+            A_matrix[q + N][p + N] = A_matrix[p + N][q + N]; // Matrix is symmetric
+        }
+    }
 }
 
 std::vector<double> KineticGas::get_delta_vector(

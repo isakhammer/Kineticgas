@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
+export CC=/usr/bin/gcc
+export CXX=/usr/bin/g++
+
 while test $# -gt 0
 do
     case "$1" in
