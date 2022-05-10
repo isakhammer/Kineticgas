@@ -45,7 +45,7 @@ class KineticGas:
         '''
         if len(comps.split(',')) > 2:
             raise IndexError('Current implementation is only binary-compatible!')
-
+        self.comps = comps
         self.BH = BH
         self.potential_mode = potential.lower()
         self.computed_d_points = {} # dict of state points in which (d_1, d0, d1) have already been computed
