@@ -6,7 +6,7 @@ from scipy.optimize import curve_fit
 from scipy.constants import gas_constant as R
 import os, subprocess
 from matplotlib.cm import get_cmap
-plt.style.use('default')
+#plt.style.use('default')
 
 OUT_ROOT = os.path.dirname(__file__) + '/output/diffusion/'
 PLOT_ROOT = os.path.dirname(__file__) + '/plots/diffusion/'
@@ -25,6 +25,8 @@ mole_weights = np.array([39.95, 4])
 mole_weights_map = {'AR' : 39.95, 'HE' : 4, 'CO2' : 44,
                     'NE' : 20.18, # 'N2' : 17.9, 'O2' : 16.6,
                     'C1' : 16}
+
+exp_fit_func = lambda T, a, b: a * T ** b
 
 def get_mole_weights(comps):
     c1, c2 = comps.split(',')
@@ -112,9 +114,10 @@ def plot_T(comps, v=0, N_list=None):
     markers = ['v', 'x', 'o']
     got_file = [True for _ in N_list]
     for i, N in enumerate(N_list):
-        filename = filename_root + str(N)+'_v' + str(v) + '.csv'
+        filename = filename_root + str(N)+'_v' + str(v)
+        data_filename = filename + '.csv'
         try:
-            df = pd.read_csv(OUT_ROOT + filename)
+            df = pd.read_csv(OUT_ROOT + data_filename)
         except FileNotFoundError:
             got_file[i] = False
             continue
@@ -124,12 +127,21 @@ def plot_T(comps, v=0, N_list=None):
         plt.plot(T, D12, marker=markers[i], color=cmap(N / max(N_list)), label=N, markevery=5)
 
     if any(got_file):
+        T = np.ma.MaskedArray(T, mask=np.isnan(D12))
+        D12 = np.ma.MaskedArray(D12, mask=np.isnan(D12))
+        T = T[~T.mask]
+        D12 = D12[~D12.mask]
+        coeff, _ = curve_fit(exp_fit_func, T, D12)
+        a, b = coeff
+        plot_filename = filename_root[:-1] + 'v' + str(v) + '.png'
         D12_fuller = Fuller(T, df['p'][0], comps)
         plt.plot(T, D12_fuller, color='r', label='Fuller')
         plt.ticklabel_format(axis='Y', style='sci', scilimits=(0, 0))
         plt.legend()
-        plt.title(comps)
+        plt.title(comps +'\t' + r'$D_{12} \sim T^{'+str(round(b, 2)) + '}$')
         plt.xlabel(r'$T$ [K]')
+        plt.ylabel(r'$D_{12}$ [m$^2$s$^{-1}$]')
+        plt.savefig(PLOT_ROOT + plot_filename)
         plt.show()
 
 def plot_p(comps, v=0, N_list=None):
@@ -140,9 +152,10 @@ def plot_p(comps, v=0, N_list=None):
     markers = ['v', 'x', 'o']
     got_file = [True for _ in N_list]
     for i, N in enumerate(N_list):
-        filename = filename_root + str(N)+'_v' + str(v) + '.csv'
+        filename = filename_root + str(N)+'_v' + str(v)
+        data_filename = filename + '.csv'
         try:
-            df = pd.read_csv(OUT_ROOT + filename)
+            df = pd.read_csv(OUT_ROOT + data_filename)
         except FileNotFoundError:
             got_file[i] = False
             continue
@@ -152,12 +165,21 @@ def plot_p(comps, v=0, N_list=None):
         plt.plot(p / 1e5, D12, marker=markers[i], color=cmap(N / max(N_list)), label=N, markevery=5)
 
     if any(got_file):
+        p = np.ma.MaskedArray(p, mask=np.isnan(D12))
+        D12 = np.ma.MaskedArray(D12, mask=np.isnan(D12))
+        p = p[~p.mask]
+        D12 = D12[~D12.mask]
+        coeff, _ = curve_fit(exp_fit_func, p, D12)
+        a, b = coeff
+        plot_filename = filename_root[:-1] + 'v' + str(v) + '.png'
         D12_fuller = Fuller(df['T'][0], p, comps)
         plt.plot(p / 1e5, D12_fuller, color='r', label='Fuller')
         plt.ticklabel_format(axis='Y', style='sci', scilimits=(0, 0))
         plt.legend()
-        plt.title(comps)
+        plt.title(comps +'\t' + r'$D_{12} \sim p^{'+str(round(b, 2)) + '}$')
         plt.xlabel(r'$p$ [bar]')
+        plt.ylabel(r'$D_{12}$ [m$^2$s$^{-1}$]')
+        plt.savefig(PLOT_ROOT + plot_filename)
         plt.show()
 
 
@@ -184,15 +206,17 @@ def plot(filename):
     plt.plot(T_data, D12_hs)
     plt.show()
 
-def run_plotting():
+def run_plotting(v=0, N_list=None):
+    if N_list is None:
+        N_list = [1]
     computed_comps = []
     for k1 in diffusion_volume_map.keys():
         for k2 in diffusion_volume_map.keys():
             comps = k1 + ',' + k2
             if k1 == k2 or comps in computed_comps:
                 continue
-            plot_T(comps, v=0, N_list=[1, 3, 5])
-            plot_p(comps, v=0, N_list=[1, 3, 5])
+            plot_T(comps, v=v, N_list=N_list)
+            plot_p(comps, v=v, N_list=N_list)
             computed_comps.append(comps)
             computed_comps.append(k2 + ',' + k1)
 
@@ -216,7 +240,7 @@ def run_computations(BH=False, N_list=None):
             computed_comps.append(k2 + ',' + k1)
 
 if __name__ == '__main__':
-    run_plotting()
+    run_plotting(v=1, N_list=[1])
     exit(0)
     subprocess.Popen('caffeinate')
     run_computations(BH=False, N_list=[1])
