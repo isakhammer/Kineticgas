@@ -4,7 +4,7 @@
 # TODO: Add code that bumps version number
 
 bash cpp/build_mac.sh
-python3 -m pykingas -test
+python -m pykingas -test
 status=$?
 if [[ $status -ne 0 ]]; then
     echo "pykingas-tests failed with exit code $status"
@@ -12,5 +12,5 @@ if [[ $status -ne 0 ]]; then
 else
     echo "pykingas-tests were successful"
 fi
-python3 setup.py sdist bdist_wheel
+python setup.py sdist bdist_wheel
 twine upload -r pypi dist/*
