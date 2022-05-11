@@ -5,11 +5,12 @@ this_dir = Path(__file__).parent
 readme = (this_dir / 'README.md').read_text()
 setup(
     name='pykingas',
-    version='2.0.0',
+    version='1.2.0',
     packages=['pykingas'],
     package_data={'pykingas': ['KineticGas*']},
-    description='Revised Enskog solutions of the Boltzmann Equations '
-                'for diffusion, thermal diffusion and thermal conductivity.',
+    description='Revised Chapman-Enskog solutions of the Boltzmann Equations '
+                'for diffusion, thermal diffusion and thermal conductivity. '
+                'Implemented for Hard spheres and Mie-fluids.',
     long_description=readme,
     long_description_content_type='text/markdown',
     author='Vegard Gjeldvik Jervell',
