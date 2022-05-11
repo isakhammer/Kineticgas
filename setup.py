@@ -7,7 +7,7 @@ setup(
     name='pykingas',
     version='2.0.0',
     packages=['pykingas'],
-    package_data={'pykingas': ['KineticGas.*']},
+    package_data={'pykingas': ['KineticGas*']},
     description='Revised Enskog solutions of the Boltzmann Equations '
                 'for diffusion, thermal diffusion and thermal conductivity.',
     long_description=readme,
