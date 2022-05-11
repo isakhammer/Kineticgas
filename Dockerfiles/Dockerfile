@@ -37,9 +37,7 @@ COPY .. .
 RUN echo "source /root/code/common_scripts.sh" >> ~/.bashrc
 RUN pip3 install -r requirements.txt
 
-RUN cd cpp/release && cmake -DCMAKE_BUILD_TYPE=Release  ..
-RUN cd cpp/release && make
-RUN cp cpp/release/KineticGas*.so pykingas/KineticGas.so
+RUN bash cpp/build_kingas.sh
 # RUN python3.9 -m pykingas -test
 
 
