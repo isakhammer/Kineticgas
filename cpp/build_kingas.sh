@@ -9,14 +9,16 @@ do
     case "$1" in
         --fullclean)
             echo "Wiping release directory"
-            cd ..
+            cd cpp
             rm -rf release
             mkdir release
-            cd release
+            cd ..
             ;;
         --cleancache)
             echo "Cleaning cache"
+            cd cpp/release
             rm -rf CMakeCache.txt
+            cd ../..
             ;;
         --Debug)
             echo "Building Debug"
@@ -28,7 +30,7 @@ do
             DIR=/tmp; [ -d "$DIR" ] && rm -rf tmp
             mkdir tmp
             mv pykingas/KineticGas_d.so tmp/KineticGas_d.so
-            cp cpp/debug/KineticGas_d.cpython-39-darwin.so pykingas/KineticGas_d.so
+            cp cpp/debug/KineticGas_d.* pykingas/KineticGas_d.so
             python -m pykingas -test -debug
             status=$?
             if [[ $status -eq 0 ]]; then
@@ -40,7 +42,7 @@ do
             exit $status
             ;;
         -*)
-            echo "Bad option $1"
+            echo "Invalid option $1"
             exit -1
     esac
     shift
@@ -55,7 +57,7 @@ cd ../..
 DIR=/tmp; [ -d "$DIR" ] && rm -rf tmp
 mkdir tmp
 mv pykingas/KineticGas_r.so tmp/KineticGas_r.so
-cp cpp/release/KineticGas_r.cpython-39-darwin.so pykingas/KineticGas_r.so
+cp cpp/release/KineticGas_r.* pykingas/KineticGas_r.so
 
 python -m pykingas -test -release
 status=$?
