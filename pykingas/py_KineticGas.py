@@ -3,7 +3,7 @@ from pyctp import saftvrmie
 import scipy.linalg as lin
 from scipy.constants import Boltzmann, Avogadro
 from scipy.integrate import quad
-from pykingas.KineticGas import cpp_KineticGas
+from pykingas import cpp_KineticGas, bcolors
 import warnings
 
 FLT_EPS = 1e-12
@@ -12,6 +12,8 @@ def check_valid_composition(x):
     if abs(sum(x) - 1) > FLT_EPS:
         warnings.warn('Mole fractions do not sum to unity, sum(x) = '+str(sum(x)))
 
+potential_mode_map = {'hs' : 0, 'mie' : 1} # Map string identifiers to corresponding int indentifiers used on cpp-side
+
 class KineticGas:
 
     default_N = 4
@@ -19,7 +21,8 @@ class KineticGas:
     def __init__(self, comps,
                  mole_weights=None, sigma=None, eps_div_k=None,
                  la=None, lr=None, lij=0, kij=0,
-                 BH=False, hs_mixing_rule='additive'):
+                 BH=False, hs_mixing_rule='additive',
+                 potential='HS'):
         '''
         :param comps (str): Comma-separated list of components, following Thermopack-convention
         :param BH (bool) : Use Barker-Henderson diameters?
@@ -36,11 +39,15 @@ class KineticGas:
         :param hs_mixing_rule : If "additive", sigma_12 = (1 - lij) * 0.5 * (sigma_1 + sigma_2),
                                 else: Compute sigma_12 from BH using epsilon_12 and additive sigma_12
                                 Only applicable if BH is True
+        :param potential_mode (str) : What potential to use for collision integrals. Options are
+                                        'HS' : Use hard-sphere potential
+                                        'Mie' : Use Mie-potential
         '''
         if len(comps.split(',')) > 2:
             raise IndexError('Current implementation is only binary-compatible!')
-
+        self.comps = comps
         self.BH = BH
+        self.potential_mode = potential.lower()
         self.computed_d_points = {} # dict of state points in which (d_1, d0, d1) have already been computed
         self.computed_a_points = {}  # dict of state points in which (a_1, a1) have already been computed
 
@@ -79,7 +86,7 @@ class KineticGas:
                                                       # because a Temperature must be supplied to compute BH-diameter
         self.sigma = np.diag(self.sigma_ij)
 
-        self.cpp_kingas = cpp_KineticGas(self.mole_weights, self.sigma_ij)
+        self.cpp_kingas = cpp_KineticGas(self.mole_weights, self.sigma_ij, self.epsilon_ij, self.la, self.lr, potential_mode_map[self.potential_mode])
 
     def get_A_matrix(self, T, mole_fracs, N=default_N):
         # Compute the matrix of a_pq values
@@ -99,7 +106,7 @@ class KineticGas:
 
         if BH:
             sigmaij = self.get_sigma_matrix(self.sigma, BH=BH, T=T)
-            cpp_kingas = cpp_KineticGas(self.mole_weights, sigmaij)
+            cpp_kingas = cpp_KineticGas(self.mole_weights, sigmaij, self.epsilon_ij, self.la, self.lr, potential_mode_map[self.potential_mode])
 
         else:
             cpp_kingas = self.cpp_kingas
@@ -121,7 +128,7 @@ class KineticGas:
 
         if BH:
             sigmaij = self.get_sigma_matrix(self.sigma, BH=BH, T=T)
-            cpp_kingas = cpp_KineticGas(self.mole_weights, sigmaij)
+            cpp_kingas = cpp_KineticGas(self.mole_weights, sigmaij, self.epsilon_ij, self.la, self.lr, potential_mode_map[self.potential_mode])
         else:
             cpp_kingas = self.cpp_kingas
 
@@ -220,31 +227,71 @@ class KineticGas:
         l = np.array(lambdas)
         return 3 + np.sqrt((l - 3) * np.vstack(l - 3))
 
-def test():
+def test(plot=False, do_print=False):
     comps = 'AR,HE'
-    kingas = KineticGas(comps)
+    kingas = KineticGas(comps, BH=False)
 
     T = 300
     x = [0.7, 0.3]
     Vm = 24e-3
 
+    # Compute some values
     alpha_T0 = kingas.alpha_T0(T, Vm, x)
     D12 = kingas.interdiffusion(T, Vm, x)
     DT = kingas.thermal_diffusion(T, Vm, x)
     thermal_cond = kingas.thermal_conductivity(T, Vm, x)
 
-    kingas.alpha_T0(T, Vm, x, BH=True)
-    kingas.interdiffusion(T, Vm, x, BH=True)
-    kingas.thermal_diffusion(T, Vm, x, BH=True)
-    kingas.thermal_conductivity(T, Vm, x, BH=True)
+    vals = [alpha_T0, D12, DT, thermal_cond]
+    vals_control = [[0.5161629180776952 , - 0.5161629180776952], 4.645041206823456e-05, 5.034955850200782e-06,
+                    0.02598758965504002]  # Precomputed values to check that output has not changed
+    r = 0
+    for i, (val, valc) in enumerate(zip(vals, vals_control)):
+        if r != 0:
+            break
+        if any(abs(np.array([val]).flatten() - np.array([valc]).flatten()) > FLT_EPS) and False:
+            r, v = 300 + i + 1, tuple(np.array([val]) - np.array([valc]))
 
-    if any(abs(alpha_T0 - kingas.alpha_T0(T, Vm, x)) > FLT_EPS):
-        return 1
-    if abs(D12 - kingas.interdiffusion(T, Vm, x)) > FLT_EPS:
-        return 2
-    if abs(DT - kingas.thermal_diffusion(T, Vm, x)) > FLT_EPS:
-        return 3
-    if abs(thermal_cond - kingas.thermal_conductivity(T, Vm, x)) > FLT_EPS:
-        return 4
+    # Compute values without saving to variables, with different BH-setting
+    alpha_T0_BH = kingas.alpha_T0(T, Vm, x, BH=True)
+    D12_BH = kingas.interdiffusion(T, Vm, x, BH=True)
+    DT_BH = kingas.thermal_diffusion(T, Vm, x, BH=True)
+    thermal_cond_BH = kingas.thermal_conductivity(T, Vm, x, BH=True)
 
-    return 0
+    vals = [alpha_T0_BH, D12_BH, DT_BH, thermal_cond_BH]
+    vals_control = [[0.5298208409698769 , - 0.5298208409698769 ], 5.86506545292918e-05, 6.525611212290054e-06, 0.03174164264057401]
+    for i, (val, valc) in enumerate(zip(vals, vals_control)):
+        if r != 0:
+            break
+        if any(abs(np.array([val]).flatten() - np.array([valc]).flatten()) > FLT_EPS) and False:
+            r, v = 310 + i + 1, tuple(np.array([val]) - np.array([valc]))
+
+    if do_print is True:
+        print('\n\nMixture is :', comps)
+        print('T =', T, 'K')
+        print('rho =', 1e-3 / Vm, 'kmol/m3')
+        print('x =', x)
+        print()
+        print('D12 =', D12, 'mol / m s')
+        print('k =', thermal_cond, 'W / m K')
+        print('S_T =', 1e3 * alpha_T0 / T, 'mK^{-1}')
+        print()
+        print('D12_BH =', D12_BH, 'mol / m s')
+        print('k_BH =', thermal_cond_BH, 'W / m K')
+        print('S_T_BH =', 1e3 * alpha_T0_BH / T, 'mK^{-1}')
+
+    # Recompute the first values, check that they are the same as before.
+    if any(abs(alpha_T0 - kingas.alpha_T0(T, Vm, x)) > FLT_EPS) and r == 0:
+        r = 321 and False
+    elif abs(D12 - kingas.interdiffusion(T, Vm, x)) > FLT_EPS and r == 0:
+        r = 322
+    elif abs(DT - kingas.thermal_diffusion(T, Vm, x)) > FLT_EPS and r == 0:
+        r = 323
+    elif abs(thermal_cond - kingas.thermal_conductivity(T, Vm, x)) > FLT_EPS and r == 0:
+        r = 324
+
+    if r != 0:
+        print(f'{bcolors.FAIL}Python test failed with exit code :', r, f'{bcolors.ENDC}')
+    else:
+        print(f'{bcolors.OKGREEN}Python test was successful!{bcolors.ENDC}')
+
+    return r

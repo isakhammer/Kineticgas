@@ -1,7 +1,5 @@
 #include "Factorial.h"
 
-constexpr double FLTEPS = 1e-10;
-
 Product ipow(int base, int expo){ // Following pow(0, 0) = 1 convention
     if (expo == 0){
         return 1;
@@ -42,16 +40,15 @@ long long Fac::eval(){
 #pragma endregion
 
 #pragma region // Product definition
-int Product::prod_count{0};
-Product::Product(int const& i) : isize{1}, dsize{0}, id{prod_count++}{
+Product::Product(int const& i) : isize{1}, dsize{0}{
     ilist[0] = i;
 }
 
-Product::Product(double const& d) : isize{0}, dsize{1}, id{prod_count++}{
+Product::Product(double const& d) : isize{0}, dsize{1}{
     dlist[0] = d;
 }
 
-Product::Product(Fac const& f) : isize{f.val - 1}, dsize{0}, id{prod_count++}{
+Product::Product(Fac const& f) : isize{f.val - 1}, dsize{0}{
     if (f.val == 0 || f.val == 1){
         isize = 0;
     }
@@ -61,7 +58,7 @@ Product::Product(Fac const& f) : isize{f.val - 1}, dsize{0}, id{prod_count++}{
         }
     }
 }
-Product::Product(Product const& p) : isize{p.isize}, dsize{p.dsize}, id{prod_count++}{
+Product::Product(Product const& p) : isize{p.isize}, dsize{p.dsize}{
     for (int i = 0; i < isize; i++){
         ilist[i] = p.ilist[i];
     }

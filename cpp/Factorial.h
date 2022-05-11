@@ -1,8 +1,9 @@
 #pragma once
+#include "KineticGas.h"
+#include "global_params.h"
 #include "math.h"
 #include "cmath"
 #include <cstdio>
-#include "KineticGas.h"
 
 class Fac{
     public:
@@ -14,8 +15,6 @@ class Fac{
 
 class Product{
     public:
-    static int prod_count;
-    int id;
     int isize;
     int dsize;
     int ilist[1000];

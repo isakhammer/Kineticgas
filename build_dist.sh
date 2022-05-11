@@ -3,7 +3,9 @@
 # Script to build and publish pypi-distribution
 # TODO: Add code that bumps version number
 
-bash cpp/build_mac.sh
+exit 0
+
+bash cpp/build_kingas.sh --fullclean
 python -m pykingas -test
 status=$?
 if [[ $status -ne 0 ]]; then
