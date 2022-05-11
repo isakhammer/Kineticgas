@@ -33,7 +33,7 @@ ENV CODE_DIR $HOME_DIR/code
 WORKDIR $CODE_DIR
 
 # Copy all files from host to container
-COPY . .
+COPY .. .
 RUN echo "source /root/code/common_scripts.sh" >> ~/.bashrc
 RUN pip3 install -r requirements.txt
 
