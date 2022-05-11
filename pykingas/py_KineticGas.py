@@ -3,8 +3,8 @@ from pyctp import saftvrmie
 import scipy.linalg as lin
 from scipy.constants import Boltzmann, Avogadro
 from scipy.integrate import quad
-from pykingas import cpp_KineticGas, bcolors
-import warnings
+from pykingas import cpp_KineticGas, bcolors, suppress_stdout
+import warnings, sys
 
 FLT_EPS = 1e-12
 
@@ -236,10 +236,11 @@ def test(plot=False, do_print=False):
     Vm = 24e-3
 
     # Compute some values
-    alpha_T0 = kingas.alpha_T0(T, Vm, x)
-    D12 = kingas.interdiffusion(T, Vm, x)
-    DT = kingas.thermal_diffusion(T, Vm, x)
-    thermal_cond = kingas.thermal_conductivity(T, Vm, x)
+    with suppress_stdout('-silent' in sys.argv):
+        alpha_T0 = kingas.alpha_T0(T, Vm, x)
+        D12 = kingas.interdiffusion(T, Vm, x)
+        DT = kingas.thermal_diffusion(T, Vm, x)
+        thermal_cond = kingas.thermal_conductivity(T, Vm, x)
 
     vals = [alpha_T0, D12, DT, thermal_cond]
     vals_control = [[0.5161629180776952 , - 0.5161629180776952], 4.645041206823456e-05, 5.034955850200782e-06,
@@ -252,10 +253,11 @@ def test(plot=False, do_print=False):
             r, v = 300 + i + 1, tuple(np.array([val]) - np.array([valc]))
 
     # Compute values without saving to variables, with different BH-setting
-    alpha_T0_BH = kingas.alpha_T0(T, Vm, x, BH=True)
-    D12_BH = kingas.interdiffusion(T, Vm, x, BH=True)
-    DT_BH = kingas.thermal_diffusion(T, Vm, x, BH=True)
-    thermal_cond_BH = kingas.thermal_conductivity(T, Vm, x, BH=True)
+    with suppress_stdout('-silent' in sys.argv):
+        alpha_T0_BH = kingas.alpha_T0(T, Vm, x, BH=True)
+        D12_BH = kingas.interdiffusion(T, Vm, x, BH=True)
+        DT_BH = kingas.thermal_diffusion(T, Vm, x, BH=True)
+        thermal_cond_BH = kingas.thermal_conductivity(T, Vm, x, BH=True)
 
     vals = [alpha_T0_BH, D12_BH, DT_BH, thermal_cond_BH]
     vals_control = [[0.5298208409698769 , - 0.5298208409698769 ], 5.86506545292918e-05, 6.525611212290054e-06, 0.03174164264057401]
@@ -280,14 +282,15 @@ def test(plot=False, do_print=False):
         print('S_T_BH =', 1e3 * alpha_T0_BH / T, 'mK^{-1}')
 
     # Recompute the first values, check that they are the same as before.
-    if any(abs(alpha_T0 - kingas.alpha_T0(T, Vm, x)) > FLT_EPS) and r == 0:
-        r = 321 and False
-    elif abs(D12 - kingas.interdiffusion(T, Vm, x)) > FLT_EPS and r == 0:
-        r = 322
-    elif abs(DT - kingas.thermal_diffusion(T, Vm, x)) > FLT_EPS and r == 0:
-        r = 323
-    elif abs(thermal_cond - kingas.thermal_conductivity(T, Vm, x)) > FLT_EPS and r == 0:
-        r = 324
+    with suppress_stdout('-silent' in sys.argv):
+        if any(abs(alpha_T0 - kingas.alpha_T0(T, Vm, x)) > FLT_EPS) and r == 0:
+            r = 321 and False
+        elif abs(D12 - kingas.interdiffusion(T, Vm, x)) > FLT_EPS and r == 0:
+            r = 322
+        elif abs(DT - kingas.thermal_diffusion(T, Vm, x)) > FLT_EPS and r == 0:
+            r = 323
+        elif abs(thermal_cond - kingas.thermal_conductivity(T, Vm, x)) > FLT_EPS and r == 0:
+            r = 324
 
     if r != 0:
         print(f'{bcolors.FAIL}Python test failed with exit code :', r, f'{bcolors.ENDC}')

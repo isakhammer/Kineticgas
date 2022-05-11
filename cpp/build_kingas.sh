@@ -31,7 +31,7 @@ do
             mkdir tmp
             mv pykingas/KineticGas_d.so tmp/KineticGas_d.so
             cp cpp/debug/KineticGas_d.* pykingas/KineticGas_d.so
-            python -m pykingas -test -debug
+            python -m pykingas -test -debug -silent
             status=$?
             if [[ $status -eq 0 ]]; then
                 rm -rf tmp

@@ -1,6 +1,7 @@
-from pykingas import KineticGas, erfspace, bcolors
+from pykingas import KineticGas, erfspace, bcolors, suppress_stdout
 from scipy.constants import Boltzmann
 import numpy as np
+import sys
 
 # Exit codes 1**
 # Second digit identifies test function, third digit identifies specific test
@@ -231,7 +232,8 @@ def run_tests(do_print=False, do_plot=False):
         print('Plotting of mie unittests is not implemented!')
     r = 0
     for t in tests:
-        r, v = t()
+        with suppress_stdout('-silent' in sys.argv):
+            r, v = t()
         if r != 0:
             if do_print:
                 print(r, v)

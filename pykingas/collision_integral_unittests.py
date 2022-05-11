@@ -1,4 +1,4 @@
-from pykingas import KineticGas, bcolors
+from pykingas import KineticGas, bcolors, suppress_stdout
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
@@ -58,7 +58,8 @@ def run_tests(do_plot=False, do_print=False):
         print('Plotting of mie unittests is not implemented!')
     r = 0
     for t in tests:
-        r, v = t(do_plot, do_print)
+        with suppress_stdout('-silent' in sys.argv):
+            r, v = t(do_plot, do_print)
         if r != 0:
             if do_print:
                 print(r, v)
